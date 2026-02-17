@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem } from '../types';
 
@@ -18,9 +17,8 @@ interface StageProps {
 const PAGE_HEIGHT = 842;
 const PAGE_WIDTH = 595;
 
-// Heuristics for text splitting based on theme and line height
-const CHARS_PAGE_ONE = 1100; // Lower limit for page 1 due to header
-const CHARS_PAGE_TWO = 1800; // Higher limit for subsequent pages
+const CHARS_PAGE_ONE = 1100;
+const CHARS_PAGE_TWO = 1800;
 
 const Stage: React.FC<StageProps> = ({ 
   resume, coverLetter, mode, theme, activeSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateCoverLetter
@@ -143,7 +141,6 @@ const Stage: React.FC<StageProps> = ({
     const text = displayedValues['coverLetter'] || coverLetter;
     if (text.length <= CHARS_PAGE_ONE) return [text];
     
-    // Improved break point logic to avoid cutting words
     const findBreak = (str: string, limit: number) => {
       let idx = str.lastIndexOf('\n', limit);
       if (idx === -1 || idx < limit * 0.7) {
@@ -159,7 +156,6 @@ const Stage: React.FC<StageProps> = ({
 
     if (remaining.length <= CHARS_PAGE_TWO) return [p1, remaining];
     
-    // If it's even longer, split again (3 pages)
     const p2End = findBreak(remaining, CHARS_PAGE_TWO);
     return [p1, remaining.substring(0, p2End), remaining.substring(p2End).trim()];
   }, [mode, displayedValues, coverLetter]);
@@ -240,7 +236,7 @@ const Stage: React.FC<StageProps> = ({
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
-  const PaperPage = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  const PaperPage: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
     <div className={`w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black resume-shadow p-12 overflow-hidden relative shadow-2xl border border-gray-100 ${getThemeClass()} ${className}`} style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}>
       {children}
     </div>
@@ -471,11 +467,9 @@ const Stage: React.FC<StageProps> = ({
           </PaperPage>
         ) : (
           <>
-            {/* Dynamic Rendering of Cover Letter Pages */}
             {letterPages.map((pageContent, index) => (
               <PaperPage key={index} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
                 <div className="h-full flex flex-col px-10 py-12">
-                   {/* Full Header only on page 1 */}
                    {index === 0 ? (
                      <div className={`flex flex-col mb-12 border-b-2 border-black/10 pb-8 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-24 -mt-24 mb-16 shadow-2xl relative' : ''}`}>
                         <div className="font-black uppercase tracking-tighter text-4xl mb-1">{resume.name}</div>
@@ -499,7 +493,6 @@ const Stage: React.FC<StageProps> = ({
                    <div className="space-y-8 flex-1 overflow-hidden">
                     {index === 0 && <div className="text-sm font-black text-black uppercase tracking-widest border-l-4 border-yellow-400 pl-4 py-1">Dear Hiring Manager,</div>}
                     
-                    {/* Only allow editing on the full content, split results are displayed statically */}
                     {index === 0 ? (
                       <EditableText 
                         fieldKey="coverLetter"
@@ -515,7 +508,6 @@ const Stage: React.FC<StageProps> = ({
                     )}
                    </div>
 
-                   {/* Render Closing Block only on the last page */}
                    {index === letterPages.length - 1 && <ClosingBlock />}
                 </div>
               </PaperPage>
@@ -524,23 +516,35 @@ const Stage: React.FC<StageProps> = ({
         )}
       </div>
 
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1E1E1E]/90 backdrop-blur-md border border-[#333] px-2 py-1.5 rounded-full flex gap-1 shadow-[0_15px_40px_rgba(0,0,0,0.5)] items-center z-30">
+      {/* Reimagined Action Pill */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1A1A1A] px-3 py-3 rounded-full flex gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.6)] items-center z-30 border border-white/5">
         <button 
           onClick={() => setIsEditing(!isEditing)}
-          className={`px-5 py-2.5 text-xs font-bold rounded-full transition-all ${isEditing ? 'bg-yellow-400 text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black rounded-full transition-all uppercase tracking-widest ${isEditing ? 'bg-[#FAFF00] text-black shadow-[0_0_20px_rgba(250,255,0,0.3)]' : 'bg-[#FAFF00]/10 text-[#FAFF00] hover:bg-[#FAFF00]/20'}`}
         >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
           {isEditing ? 'FINISH' : 'EDIT'}
         </button>
+        
         <button 
-          className="px-6 py-2.5 text-xs font-black bg-yellow-400 text-black hover:bg-yellow-300 rounded-full transition-all shadow-xl active:scale-95 transform tracking-tight"
+          className="flex items-center gap-2 px-6 py-3 text-[10px] font-black bg-[#5EF3FF] text-black hover:bg-[#4DD0E1] rounded-full transition-all shadow-[0_0_20px_rgba(94,243,255,0.2)] active:scale-95 transform uppercase tracking-widest"
         >
-          DOWNLOAD PDF
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          DOWNLOAD
         </button>
+        
         <button 
           onClick={() => setShowShareDialog(!showShareDialog)}
-          className={`px-5 py-2.5 text-xs font-bold rounded-full transition-all ${showShareDialog ? 'bg-yellow-400 text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black rounded-full transition-all border uppercase tracking-widest ${showShareDialog ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/20 hover:bg-white/5'}`}
         >
-          SHARE
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+          EXPORT
         </button>
       </div>
     </div>
