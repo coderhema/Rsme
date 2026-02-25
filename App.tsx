@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem } from './types';
-import { calculateATSScore, getAISuggestions, generateCoverLetter } from './services/geminiService';
+import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from './types';
+import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume } from './services/geminiService';
 import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
 
@@ -50,6 +50,7 @@ const App: React.FC = () => {
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
+  const [roast, setRoast] = useState<string | null>(null);
 
   useEffect(() => {
     setAtsScore(calculateATSScore(resume));
@@ -85,6 +86,13 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleUpdateEducation = (id: string, field: keyof EducationItem, value: string) => {
+    setResume(prev => ({
+      ...prev,
+      education: prev.education.map(ed => ed.id === id ? { ...ed, [field]: value } : ed)
+    }));
+  };
+
   const applySuggestion = (suggestion: AISuggestion) => {
     if (suggestion.field === 'summary') {
       handleUpdateResume('summary', suggestion.suggestion);
@@ -107,6 +115,13 @@ const App: React.FC = () => {
     // Basic clean up of markdown bold if present
     const cleanContent = content.replace(/\*\*/g, '').replace(/### /g, '');
     setCoverLetter(cleanContent);
+    setIsAiLoading(false);
+  };
+
+  const handleRoast = async (data?: ResumeData | string) => {
+    setIsAiLoading(true);
+    const result = await roastResume(data || resume);
+    setRoast(result);
     setIsAiLoading(false);
   };
 
@@ -136,7 +151,11 @@ const App: React.FC = () => {
         onApplySuggestion={applySuggestion}
         onUpdateResume={handleUpdateResume}
         onUpdateExperience={handleUpdateExperience}
+        onUpdateEducation={handleUpdateEducation}
         onUpdateCoverLetter={setCoverLetter}
+        onRoast={handleRoast}
+        roast={roast}
+        onCloseRoast={() => setRoast(null)}
       />
     </div>
   );

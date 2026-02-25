@@ -6,6 +6,9 @@ export interface ResumeData {
   phone: string;
   location: string;
   summary: string;
+  date?: string;
+  salutation?: string;
+  closingPhrase?: string;
   experience: ExperienceItem[];
   skills: string[];
   education: EducationItem[];

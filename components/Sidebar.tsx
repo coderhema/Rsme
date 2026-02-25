@@ -23,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
 
   const resumeThemes = [
-    ResumeTheme.MODERN, ResumeTheme.MINIMAL, ResumeTheme.CREATIVE,
+    ResumeTheme.MODERN, ResumeTheme.MINIMAL,
     ResumeTheme.PROFESSIONAL, ResumeTheme.EXECUTIVE, ResumeTheme.ACADEMIC
   ];
 

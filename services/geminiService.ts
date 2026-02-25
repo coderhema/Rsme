@@ -82,3 +82,23 @@ export const generateCoverLetter = async (resume: ResumeData, jobDescription: st
         return "Failed to generate cover letter. Please try again.";
     }
 }
+
+export const roastResume = async (resume: ResumeData | string): Promise<string> => {
+  try {
+    const resumeText = typeof resume === 'string' ? resume : JSON.stringify(resume);
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `You are a brutal, sarcastic, and hilarious resume roaster. 
+      Analyze the following resume and give a scathing but funny roast. 
+      Point out the clichés, the gaps, the over-inflated titles, and the boring skills.
+      Keep it under 200 words. Use emojis.
+      
+      Resume:
+      ${resumeText}`,
+    });
+    return response.text || "Your resume is so boring I fell asleep before I could roast it.";
+  } catch (error) {
+    console.error("Roast Error:", error);
+    return "Even the AI is too stunned to speak about this resume.";
+  }
+};

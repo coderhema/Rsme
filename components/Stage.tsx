@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem } from '../types';
+import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 
 interface StageProps {
   resume: ResumeData;
@@ -11,7 +11,11 @@ interface StageProps {
   onApplySuggestion: (s: AISuggestion) => void;
   onUpdateResume: (field: keyof ResumeData, value: any) => void;
   onUpdateExperience: (id: string, field: keyof ExperienceItem, value: string) => void;
+  onUpdateEducation: (id: string, field: keyof EducationItem, value: string) => void;
   onUpdateCoverLetter: (v: string) => void;
+  onRoast: (data?: ResumeData | string) => void;
+  roast: string | null;
+  onCloseRoast: () => void;
 }
 
 const PAGE_HEIGHT = 842;
@@ -20,8 +24,99 @@ const PAGE_WIDTH = 595;
 const CHARS_PAGE_ONE = 1100;
 const CHARS_PAGE_TWO = 1800;
 
+interface EditableTextProps {
+  fieldKey: string;
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+  multiline?: boolean;
+  isEditing: boolean;
+  animatingField: string | null;
+  displayedValues: Record<string, string>;
+}
+
+const EditableText: React.FC<EditableTextProps> = ({ 
+  fieldKey,
+  value, 
+  onChange, 
+  className, 
+  multiline = false,
+  isEditing,
+  animatingField,
+  displayedValues
+}) => {
+  const isThisAnimating = animatingField === fieldKey;
+  const valToDisplay = isThisAnimating ? (displayedValues[fieldKey] || value) : value;
+
+  if (!isEditing && !isThisAnimating) {
+    return <div className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap`}>{valToDisplay}</div>;
+  }
+  
+  if (isThisAnimating) {
+    return (
+      <div className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap relative text-yellow-600 font-medium bg-yellow-400/5 px-2 -mx-2 rounded transition-all duration-300`}>
+        {valToDisplay}
+        <span className="inline-block w-[3px] h-[1.2em] bg-yellow-500 ml-1 translate-y-1 animate-pulse"></span>
+        <div className="absolute -top-4 right-0 text-[8px] font-black text-yellow-500 uppercase tracking-widest bg-black px-1 py-0.5 rounded border border-yellow-500/30 shadow-lg">AI WRITING...</div>
+      </div>
+    );
+  }
+  
+  const sharedClasses = `${className} w-full bg-transparent focus:outline-none focus:bg-yellow-50/50 hover:bg-black/5 cursor-text transition-colors px-1 -mx-1 rounded border-b border-transparent focus:border-yellow-400/30 overflow-hidden no-scrollbar`;
+  
+  return multiline ? (
+    <textarea 
+      value={value} 
+      onChange={(e) => onChange(e.target.value)} 
+      className={`${sharedClasses} resize-none`}
+      style={{ height: 'auto' }}
+      onInput={(e) => {
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = 'auto';
+        target.style.height = `${target.scrollHeight}px`;
+      }}
+      ref={(el) => {
+        if (el) {
+          el.style.height = 'auto';
+          el.style.height = `${el.scrollHeight}px`;
+        }
+      }}
+    />
+  ) : (
+    <input 
+      type="text" 
+      value={value} 
+      onChange={(e) => onChange(e.target.value)} 
+      className={sharedClasses} 
+    />
+  );
+};
+
+const PaperPage: React.FC<React.PropsWithChildren<{ className?: string, themeClass: string }>> = ({ children, className = "", themeClass }) => (
+  <div className={`w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black resume-shadow p-12 overflow-hidden relative shadow-2xl border border-gray-100 ${themeClass} ${className}`} style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}>
+    {children}
+  </div>
+);
+
+const ClosingBlock: React.FC<{ resume: ResumeData, theme: ResumeTheme | LetterTheme }> = ({ resume, theme }) => (
+  <div className={`mt-8 pt-6 border-t border-gray-100 flex justify-between items-end animate-in fade-in duration-700 ${theme === LetterTheme.CLASSIC ? 'border-gray-200' : ''}`}>
+    <div className={theme === LetterTheme.CLASSIC ? 'text-left' : ''}>
+      <div className={`text-[11px] mb-2 tracking-tighter uppercase ${theme === LetterTheme.CLASSIC ? 'text-gray-600 font-serif italic normal-case tracking-normal' : 'text-gray-400 font-bold italic'}`}>
+        {theme === LetterTheme.CLASSIC ? 'Sincerely,' : 'Respectfully,'}
+      </div>
+      <div className={`text-black mb-1 ${theme === LetterTheme.CLASSIC ? 'text-base font-serif' : 'text-lg font-black uppercase tracking-widest'}`}>
+        {resume.name}
+      </div>
+    </div>
+    <div className={`w-24 h-12 italic font-serif text-2xl select-none px-2 flex items-end ${theme === LetterTheme.CLASSIC ? 'border-b border-gray-300 text-gray-400 opacity-60' : 'border-b-2 border-yellow-400 text-gray-200 opacity-40'}`}>
+      {resume.name.split(' ')[0]}
+    </div>
+  </div>
+);
+
 const Stage: React.FC<StageProps> = ({ 
-  resume, coverLetter, mode, theme, activeSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateCoverLetter
+  resume, coverLetter, mode, theme, activeSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
+  onRoast, roast, onCloseRoast
 }) => {
   const [zoom, setZoom] = useState(0.85);
   const [isDragging, setIsDragging] = useState(false);
@@ -32,6 +127,7 @@ const Stage: React.FC<StageProps> = ({
   
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const newValues: Record<string, string> = {
@@ -45,8 +141,16 @@ const Stage: React.FC<StageProps> = ({
     };
     resume.experience.forEach(exp => {
       newValues[`exp-title-${exp.id}`] = exp.title;
+      newValues[`exp-company-${exp.id}`] = exp.company;
+      newValues[`exp-period-${exp.id}`] = exp.period;
       newValues[`exp-desc-${exp.id}`] = exp.description;
     });
+    resume.education.forEach(ed => {
+      newValues[`ed-degree-${ed.id}`] = ed.degree;
+      newValues[`ed-school-${ed.id}`] = ed.school;
+      newValues[`ed-year-${ed.id}`] = ed.year;
+    });
+    newValues['skills'] = resume.skills.join(', ');
 
     setDisplayedValues(prev => {
       const merged = { ...newValues };
@@ -160,66 +264,6 @@ const Stage: React.FC<StageProps> = ({
     return [p1, remaining.substring(0, p2End), remaining.substring(p2End).trim()];
   }, [mode, displayedValues, coverLetter]);
 
-  const EditableText = ({ 
-    fieldKey,
-    value, 
-    onChange, 
-    className, 
-    multiline = false 
-  }: { 
-    fieldKey: string,
-    value: string, 
-    onChange: (v: string) => void, 
-    className?: string, 
-    multiline?: boolean 
-  }) => {
-    const isThisAnimating = animatingField === fieldKey;
-    const valToDisplay = displayedValues[fieldKey] !== undefined ? displayedValues[fieldKey] : value;
-
-    if (!isEditing && !isThisAnimating) {
-      return <div className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap`}>{valToDisplay}</div>;
-    }
-    
-    if (isThisAnimating) {
-      return (
-        <div className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap relative text-yellow-600 font-medium bg-yellow-400/5 px-2 -mx-2 rounded transition-all duration-300`}>
-          {valToDisplay}
-          <span className="inline-block w-[3px] h-[1.2em] bg-yellow-500 ml-1 translate-y-1 animate-pulse"></span>
-          <div className="absolute -top-4 right-0 text-[8px] font-black text-yellow-500 uppercase tracking-widest bg-black px-1 py-0.5 rounded border border-yellow-500/30 shadow-lg">AI WRITING...</div>
-        </div>
-      );
-    }
-    
-    const sharedClasses = `${className} w-full bg-transparent focus:outline-none focus:bg-yellow-50/50 hover:bg-black/5 cursor-text transition-colors px-1 -mx-1 rounded border-b border-transparent focus:border-yellow-400/30 overflow-hidden no-scrollbar`;
-    
-    return multiline ? (
-      <textarea 
-        value={valToDisplay} 
-        onChange={(e) => onChange(e.target.value)} 
-        className={`${sharedClasses} resize-none`}
-        style={{ height: 'auto' }}
-        onInput={(e) => {
-          const target = e.target as HTMLTextAreaElement;
-          target.style.height = 'auto';
-          target.style.height = `${target.scrollHeight}px`;
-        }}
-        ref={(el) => {
-          if (el) {
-            el.style.height = 'auto';
-            el.style.height = `${el.scrollHeight}px`;
-          }
-        }}
-      />
-    ) : (
-      <input 
-        type="text" 
-        value={valToDisplay} 
-        onChange={(e) => onChange(e.target.value)} 
-        className={sharedClasses} 
-      />
-    );
-  };
-
   const shareToLinkedIn = () => {
     const url = encodeURIComponent(window.location.href);
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
@@ -236,23 +280,30 @@ const Stage: React.FC<StageProps> = ({
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
-  const PaperPage: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
-    <div className={`w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black resume-shadow p-12 overflow-hidden relative shadow-2xl border border-gray-100 ${getThemeClass()} ${className}`} style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}>
-      {children}
-    </div>
-  );
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const ClosingBlock = () => (
-    <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-end animate-in fade-in duration-700">
-      <div>
-        <div className="text-[11px] text-gray-400 font-bold italic mb-2 tracking-tighter uppercase">Respectfully,</div>
-        <div className="text-lg font-black uppercase tracking-widest text-black mb-1">{resume.name}</div>
-      </div>
-      <div className="w-24 h-12 border-b-2 border-yellow-400 italic font-serif text-gray-200 text-2xl opacity-40 select-none px-2 flex items-end">
-        {resume.name.split(' ')[0]}
-      </div>
-    </div>
-  );
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        // If it's a text file or JSON, we can try to parse it or just send as text
+        onRoast(content);
+      }
+    };
+    
+    if (file.type === 'application/json' || file.type === 'text/plain') {
+      reader.readAsText(file);
+    } else {
+      // For other files, we'll just say we're roasting the current one for now 
+      // or we could implement PDF parsing if we had a library.
+      // But let's try to be helpful:
+      onRoast(); 
+    }
+  };
+
+  const themeClass = getThemeClass();
 
   return (
     <div className="flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth">
@@ -345,6 +396,35 @@ const Stage: React.FC<StageProps> = ({
         </div>
       )}
 
+      {/* Roast Popup */}
+      {roast && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-[#1A1A1A] border-2 border-red-500/30 w-[500px] rounded-2xl shadow-[0_0_100px_rgba(239,68,68,0.2)] overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-red-500 text-white px-6 py-4 font-black text-xs uppercase tracking-[0.3em] flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>
+                BRUTAL AI ROAST
+              </div>
+              <button onClick={onCloseRoast} className="hover:scale-125 transition-transform text-xl leading-none">×</button>
+            </div>
+            <div className="p-8">
+              <div className="text-gray-400 font-mono text-[10px] mb-6 uppercase tracking-widest border-b border-white/5 pb-4">
+                ANALYSIS COMPLETE. PREPARE FOR EMOTIONAL DAMAGE.
+              </div>
+              <div className="text-lg text-white font-medium leading-relaxed italic mb-8 bg-red-500/5 p-6 rounded-xl border border-red-500/10">
+                "{roast}"
+              </div>
+              <button 
+                onClick={onCloseRoast}
+                className="w-full py-4 bg-red-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+              >
+                I DESERVED THIS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AI Suggestion Popup */}
       {activeSuggestion && (
         <div className="fixed top-[15%] left-[55%] w-[420px] bg-[#1E1E1E] border border-[#333] rounded-lg shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95">
@@ -387,7 +467,7 @@ const Stage: React.FC<StageProps> = ({
         className="transition-transform duration-150 will-change-transform flex flex-col gap-10 items-center"
       >
         {mode === 'RESUME' ? (
-          <PaperPage>
+          <PaperPage themeClass={themeClass}>
             <div className="h-full flex flex-col">
               <div className={`mb-8 ${theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE ? 'bg-[#2c3e50] text-white -m-12 p-12 mb-8' : ''}`}>
                 <EditableText 
@@ -395,12 +475,18 @@ const Stage: React.FC<StageProps> = ({
                   value={resume.name}
                   onChange={(v) => onUpdateResume('name', v)}
                   className={`text-4xl font-extrabold uppercase tracking-tight ${theme === ResumeTheme.MODERN ? 'font-["Playfair_Display"] text-5xl normal-case' : ''}`}
+                  isEditing={isEditing}
+                  animatingField={animatingField}
+                  displayedValues={displayedValues}
                 />
                 <EditableText 
                   fieldKey="role"
                   value={resume.role}
                   onChange={(v) => onUpdateResume('role', v)}
                   className="text-sm font-medium text-gray-500 uppercase tracking-[0.2em] mt-2"
+                  isEditing={isEditing}
+                  animatingField={animatingField}
+                  displayedValues={displayedValues}
                 />
               </div>
 
@@ -408,21 +494,55 @@ const Stage: React.FC<StageProps> = ({
                 <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
                   <SectionTitle title="Contact" />
                   <div className="text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium">
-                     <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} />
-                     <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} />
-                     <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} />
+                     <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
+                     <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
+                     <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                   </div>
                   <SectionTitle title="Skills" />
                   <div className="flex flex-wrap gap-1 mb-8">
-                    {resume.skills.map((skill, idx) => (
-                      <span key={idx} className="bg-gray-100 text-[10px] px-2 py-0.5 font-bold rounded-sm tracking-tight text-gray-700">{skill}</span>
-                    ))}
+                    <EditableText 
+                      fieldKey="skills"
+                      value={resume.skills.join(', ')}
+                      onChange={(v) => onUpdateResume('skills', v.split(',').map(s => s.trim()).filter(s => s !== ''))}
+                      className="text-[10px] font-bold tracking-tight text-gray-700 w-full"
+                      isEditing={isEditing}
+                      animatingField={animatingField}
+                      displayedValues={displayedValues}
+                    />
                   </div>
                   <SectionTitle title="Education" />
                   {resume.education.map(ed => (
                     <div key={ed.id} className="mb-4">
-                      <div className="text-[11px] font-bold tracking-tight">{ed.degree}</div>
-                      <div className="text-[10px] text-gray-500 italic">{ed.school} • {ed.year}</div>
+                      <EditableText 
+                        fieldKey={`ed-degree-${ed.id}`}
+                        value={ed.degree}
+                        onChange={(v) => onUpdateEducation(ed.id, 'degree', v)}
+                        className="text-[11px] font-bold tracking-tight"
+                        isEditing={isEditing}
+                        animatingField={animatingField}
+                        displayedValues={displayedValues}
+                      />
+                      <div className="flex items-center gap-1">
+                        <EditableText 
+                          fieldKey={`ed-school-${ed.id}`}
+                          value={ed.school}
+                          onChange={(v) => onUpdateEducation(ed.id, 'school', v)}
+                          className="text-[10px] text-gray-500 italic"
+                          isEditing={isEditing}
+                          animatingField={animatingField}
+                          displayedValues={displayedValues}
+                        />
+                        <span className="text-[10px] text-gray-500">•</span>
+                        <EditableText 
+                          fieldKey={`ed-year-${ed.id}`}
+                          value={ed.year}
+                          onChange={(v) => onUpdateEducation(ed.id, 'year', v)}
+                          className="text-[10px] text-gray-500 italic"
+                          isEditing={isEditing}
+                          animatingField={animatingField}
+                          displayedValues={displayedValues}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -435,6 +555,9 @@ const Stage: React.FC<StageProps> = ({
                       onChange={(v) => onUpdateResume('summary', v)} 
                       className="text-[11px] leading-relaxed text-gray-700 font-medium" 
                       multiline 
+                      isEditing={isEditing}
+                      animatingField={animatingField}
+                      displayedValues={displayedValues}
                     />
                   </div>
                   <SectionTitle title="Experience" />
@@ -447,16 +570,38 @@ const Stage: React.FC<StageProps> = ({
                             value={exp.title} 
                             onChange={(v) => onUpdateExperience(exp.id, 'title', v)} 
                             className="font-bold text-sm tracking-tight flex-1 mr-2" 
+                            isEditing={isEditing}
+                            animatingField={animatingField}
+                            displayedValues={displayedValues}
                           />
-                          <span className="text-[10px] text-gray-400 font-mono whitespace-nowrap">{exp.period}</span>
+                          <EditableText 
+                            fieldKey={`exp-period-${exp.id}`}
+                            value={exp.period} 
+                            onChange={(v) => onUpdateExperience(exp.id, 'period', v)} 
+                            className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right" 
+                            isEditing={isEditing}
+                            animatingField={animatingField}
+                            displayedValues={displayedValues}
+                          />
                         </div>
-                        <div className="text-[11px] font-bold text-yellow-600/80 mb-2 uppercase tracking-widest">{exp.company}</div>
+                        <EditableText 
+                          fieldKey={`exp-company-${exp.id}`}
+                          value={exp.company} 
+                          onChange={(v) => onUpdateExperience(exp.id, 'company', v)} 
+                          className="text-[11px] font-bold text-yellow-600/80 mb-2 uppercase tracking-widest" 
+                          isEditing={isEditing}
+                          animatingField={animatingField}
+                          displayedValues={displayedValues}
+                        />
                         <EditableText 
                           fieldKey={`exp-desc-${exp.id}`}
                           value={exp.description} 
                           onChange={(v) => onUpdateExperience(exp.id, 'description', v)} 
                           className="text-[11px] leading-relaxed text-gray-700" 
                           multiline 
+                          isEditing={isEditing}
+                          animatingField={animatingField}
+                          displayedValues={displayedValues}
                         />
                       </div>
                     ))}
@@ -468,20 +613,24 @@ const Stage: React.FC<StageProps> = ({
         ) : (
           <>
             {letterPages.map((pageContent, index) => (
-              <PaperPage key={index} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
-                <div className="h-full flex flex-col px-10 py-12">
+              <PaperPage key={index} themeClass={themeClass} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
+                <div className="h-full flex flex-col">
                    {index === 0 ? (
-                     <div className={`flex flex-col mb-12 border-b-2 border-black/10 pb-8 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-24 -mt-24 mb-16 shadow-2xl relative' : ''}`}>
-                        <div className="font-black uppercase tracking-tighter text-4xl mb-1">{resume.name}</div>
-                        <div className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-6">{resume.role}</div>
-                        <div className="flex justify-between items-center text-[10px] font-mono font-bold text-gray-400">
-                          <div className="flex gap-4">
+                     <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-12 -mt-12 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
+                        <div className={`${theme === LetterTheme.CLASSIC ? 'text-3xl font-serif mb-2' : 'font-black uppercase tracking-tighter text-4xl mb-1'}`}>{resume.name}</div>
+                        <div className={`${theme === LetterTheme.CLASSIC ? 'text-[10px] text-gray-400 italic mb-4' : 'text-[11px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-6'}`}>{resume.role}</div>
+                        <div className={`flex justify-between items-center text-[10px] font-mono font-bold text-gray-400 w-full ${theme === LetterTheme.CLASSIC ? 'flex-col gap-1 italic font-serif' : ''}`}>
+                          <div className={`flex gap-4 ${theme === LetterTheme.CLASSIC ? 'justify-center' : ''}`}>
                             <span>{resume.location}</span>
+                            {theme === LetterTheme.CLASSIC && <span>•</span>}
                             <span>{resume.email}</span>
+                            {theme === LetterTheme.CLASSIC && <span>•</span>}
+                            {theme === LetterTheme.CLASSIC && <span>{resume.phone}</span>}
                           </div>
-                          <div>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                          <div className={theme === LetterTheme.CLASSIC ? 'mt-4 text-gray-900 not-italic font-sans font-bold uppercase tracking-widest' : ''}>
+                            {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </div>
                         </div>
-                        {theme === LetterTheme.BOLD && <div className="absolute -bottom-6 right-12 w-16 h-16 bg-yellow-400 flex items-center justify-center font-black text-black text-xl shadow-lg">AI</div>}
                      </div>
                    ) : (
                      <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-10 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
@@ -496,10 +645,13 @@ const Stage: React.FC<StageProps> = ({
                     {index === 0 ? (
                       <EditableText 
                         fieldKey="coverLetter"
-                        value={pageContent} 
+                        value={coverLetter} 
                         onChange={(v) => onUpdateCoverLetter(v)} 
                         className="text-sm leading-[1.9] text-gray-800 text-justify font-medium" 
                         multiline 
+                        isEditing={isEditing}
+                        animatingField={animatingField}
+                        displayedValues={displayedValues}
                       />
                     ) : (
                       <div className="text-sm leading-[1.9] text-gray-800 text-justify font-medium whitespace-pre-wrap">
@@ -508,7 +660,7 @@ const Stage: React.FC<StageProps> = ({
                     )}
                    </div>
 
-                   {index === letterPages.length - 1 && <ClosingBlock />}
+                   {index === letterPages.length - 1 && <ClosingBlock resume={resume} theme={theme} />}
                 </div>
               </PaperPage>
             ))}
