@@ -318,7 +318,7 @@ const Stage: React.FC<StageProps> = ({
         
         <div 
           ref={trackRef}
-          className="relative h-full w-1.5 bg-white/5 rounded-full cursor-ns-resize"
+          className="relative h-full w-6 flex justify-center cursor-ns-resize group/track"
           onMouseDown={(e) => {
              const rect = trackRef.current!.getBoundingClientRect();
              const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
@@ -327,15 +327,19 @@ const Stage: React.FC<StageProps> = ({
              setIsDragging(true);
           }}
         >
-          <div className="absolute -left-1.5 top-0 w-4 h-[1px] bg-white/20"></div>
-          <div className="absolute -left-1.5 top-1/2 w-4 h-[1px] bg-white/20"></div>
-          <div className="absolute -left-1.5 bottom-0 w-4 h-[1px] bg-white/20"></div>
+          {/* Track Line */}
+          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 bg-white/10 rounded-full group-hover/zoom:bg-white/20 transition-colors" />
+          
+          {/* Ticks */}
+          <div className="absolute left-0 right-0 top-0 h-[1px] bg-white/20"></div>
+          <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/20"></div>
+          <div className="absolute left-0 right-0 bottom-0 h-[1px] bg-white/20"></div>
 
           <div 
-            className={`absolute left-1/2 -translate-x-1/2 w-6 h-12 bg-yellow-400 rounded-lg shadow-[0_0_30px_rgba(251,191,36,0.4)] flex flex-col items-center justify-center pointer-events-auto transition-shadow duration-300 ${isDragging ? 'shadow-[0_0_45px_rgba(251,191,36,0.6)]' : 'hover:shadow-[0_0_35px_rgba(251,191,36,0.5)]'}`}
+            className={`absolute left-0 w-6 h-12 bg-yellow-400 rounded-lg shadow-[0_0_30px_rgba(251,191,36,0.4)] flex flex-col items-center justify-center pointer-events-auto transition-all duration-300 ${isDragging ? 'shadow-[0_0_45px_rgba(251,191,36,0.6)]' : 'hover:shadow-[0_0_35px_rgba(251,191,36,0.5)]'}`}
             style={{ 
                 bottom: `${((zoom - 0.5) / 1.5) * 100}%`,
-                transform: `translate(-50%, 50%) ${isDragging ? 'scale(0.95)' : 'scale(1)'}` 
+                transform: `translateY(50%) ${isDragging ? 'scale(0.95)' : 'scale(1.05)'}` 
             }}
             onMouseDown={(e) => {
                 e.stopPropagation();
