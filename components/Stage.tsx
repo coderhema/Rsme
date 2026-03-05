@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
+import { Sparkles, X, Check, ArrowRight, PenLine } from 'lucide-react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 
 interface StageProps {
@@ -33,6 +35,7 @@ interface EditableTextProps {
   isEditing: boolean;
   animatingField: string | null;
   displayedValues: Record<string, string>;
+  isActiveSuggestion?: boolean;
 }
 
 const EditableText: React.FC<EditableTextProps> = ({ 
@@ -43,29 +46,36 @@ const EditableText: React.FC<EditableTextProps> = ({
   multiline = false,
   isEditing,
   animatingField,
-  displayedValues
+  displayedValues,
+  isActiveSuggestion = false
 }) => {
   const isThisAnimating = animatingField === fieldKey;
   const valToDisplay = isThisAnimating ? (displayedValues[fieldKey] || value) : value;
 
+  const highlightClass = isActiveSuggestion ? 'ring-2 ring-yellow-400 ring-offset-4 ring-offset-white bg-yellow-50 rounded-sm transition-all duration-500' : '';
+
   if (!isEditing && !isThisAnimating) {
-    return <div className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap`}>{valToDisplay}</div>;
+    return <div id={fieldKey} className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap ${highlightClass}`}>{valToDisplay}</div>;
   }
   
   if (isThisAnimating) {
     return (
-      <div className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap relative text-yellow-600 font-medium bg-yellow-400/5 px-2 -mx-2 rounded transition-all duration-300`}>
+      <div id={fieldKey} className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap relative text-yellow-600 font-medium bg-yellow-400/5 px-2 -mx-2 rounded transition-all duration-300`}>
         {valToDisplay}
         <span className="inline-block w-[3px] h-[1.2em] bg-yellow-500 ml-1 translate-y-1 animate-pulse"></span>
-        <div className="absolute -top-4 right-0 text-[8px] font-black text-yellow-500 uppercase tracking-widest bg-black px-1 py-0.5 rounded border border-yellow-500/30 shadow-lg">AI WRITING...</div>
+        <div className="absolute -top-5 right-0 flex items-center gap-1.5 px-2 py-1 bg-black rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(251,191,36,0.2)]">
+          <PenLine size={10} className="text-yellow-400 animate-bounce" />
+          <div className="text-[8px] font-black uppercase tracking-[0.15em] bg-gradient-to-r from-yellow-400 via-white to-yellow-400 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent">Typecrafting...</div>
+        </div>
       </div>
     );
   }
   
-  const sharedClasses = `${className} w-full bg-transparent focus:outline-none focus:bg-yellow-50/50 hover:bg-black/5 cursor-text transition-colors px-1 -mx-1 rounded border-b border-transparent focus:border-yellow-400/30 overflow-hidden no-scrollbar`;
+  const sharedClasses = `${className} w-full bg-transparent focus:outline-none focus:bg-yellow-50/50 hover:bg-black/5 cursor-text transition-colors px-1 -mx-1 rounded border-b border-transparent focus:border-yellow-400/30 overflow-hidden no-scrollbar ${highlightClass}`;
   
   return multiline ? (
     <textarea 
+      id={fieldKey}
       value={value} 
       onChange={(e) => onChange(e.target.value)} 
       className={`${sharedClasses} resize-none`}
@@ -84,6 +94,7 @@ const EditableText: React.FC<EditableTextProps> = ({
     />
   ) : (
     <input 
+      id={fieldKey}
       type="text" 
       value={value} 
       onChange={(e) => onChange(e.target.value)} 
@@ -92,8 +103,11 @@ const EditableText: React.FC<EditableTextProps> = ({
   );
 };
 
-const PaperPage: React.FC<React.PropsWithChildren<{ className?: string, themeClass: string }>> = ({ children, className = "", themeClass }) => (
-  <div className={`w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black resume-shadow p-12 overflow-hidden relative shadow-2xl border border-gray-100 ${themeClass} ${className}`} style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}>
+const PaperPage: React.FC<React.PropsWithChildren<{ className?: string, themeClass: string, isMinimal?: boolean }>> = ({ children, className = "", themeClass, isMinimal }) => (
+  <div 
+    className={`w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black overflow-hidden relative ${isMinimal ? 'shadow-sm border border-gray-50' : 'resume-shadow shadow-2xl border border-gray-100'} ${themeClass} ${className}`} 
+    style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}
+  >
     {children}
   </div>
 );
@@ -119,12 +133,27 @@ const Stage: React.FC<StageProps> = ({
   onRoast, roast, onCloseRoast
 }) => {
   const [zoom, setZoom] = useState(0.85);
+  const smoothZoom = useSpring(zoom, { stiffness: 300, damping: 30 });
+  
   const [isDragging, setIsDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [animatingField, setAnimatingField] = useState<string | null>(null);
   const [displayedValues, setDisplayedValues] = useState<Record<string, string>>({});
   
+  const [suggestionBoxPos, setSuggestionBoxPos] = useState({ x: 0, y: 0 });
+  const suggestionRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (activeSuggestion && suggestionRef.current) {
+      const rect = suggestionRef.current.getBoundingClientRect();
+      setSuggestionBoxPos({ 
+        x: rect.left + rect.width / 2, 
+        y: rect.top + rect.height / 2 
+      });
+    }
+  }, [activeSuggestion]);
+
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +189,10 @@ const Stage: React.FC<StageProps> = ({
       return merged;
     });
   }, [resume, coverLetter, animatingField]);
+
+  useEffect(() => {
+    smoothZoom.set(zoom);
+  }, [zoom, smoothZoom]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !trackRef.current) return;
@@ -207,6 +240,15 @@ const Stage: React.FC<StageProps> = ({
       }
     }, 12); 
   };
+
+  const isFieldActiveSuggestion = useCallback((fieldKey: string) => {
+    if (!activeSuggestion) return false;
+    let targetId = activeSuggestion.field;
+    if (targetId.startsWith('experience:')) {
+      targetId = `exp-desc-${targetId.split(':')[1]}`;
+    }
+    return targetId === fieldKey;
+  }, [activeSuggestion]);
 
   const handleApplySuggestion = (s: AISuggestion) => {
     let fieldKey = s.field;
@@ -335,11 +377,16 @@ const Stage: React.FC<StageProps> = ({
           <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/20"></div>
           <div className="absolute left-0 right-0 bottom-0 h-[1px] bg-white/20"></div>
 
-          <div 
-            className={`absolute left-0 w-6 h-12 bg-yellow-400 rounded-lg shadow-[0_0_30px_rgba(251,191,36,0.4)] flex flex-col items-center justify-center pointer-events-auto transition-all duration-300 ${isDragging ? 'shadow-[0_0_45px_rgba(251,191,36,0.6)]' : 'hover:shadow-[0_0_35px_rgba(251,191,36,0.5)]'}`}
+          <motion.div 
+            className={`absolute left-0 w-6 h-12 bg-yellow-400 rounded-lg shadow-[0_0_30px_rgba(251,191,36,0.4)] flex flex-col items-center justify-center pointer-events-auto cursor-ns-resize z-10`}
             style={{ 
                 bottom: `${((zoom - 0.5) / 1.5) * 100}%`,
-                transform: `translateY(50%) ${isDragging ? 'scale(0.95)' : 'scale(1.05)'}` 
+                y: '50%'
+            }}
+            whileHover={{ scale: 1.1, shadow: '0_0_40px_rgba(251,191,36,0.6)' }}
+            whileTap={{ scale: 0.95 }}
+            animate={{ 
+              shadow: isDragging ? '0_0_45px_rgba(251,191,36,0.6)' : '0_0_30px_rgba(251,191,36,0.4)'
             }}
             onMouseDown={(e) => {
                 e.stopPropagation();
@@ -349,7 +396,7 @@ const Stage: React.FC<StageProps> = ({
             <div className="w-3 h-[2px] bg-black/30 mb-[3px] rounded-full"></div>
             <div className="w-3 h-[2px] bg-black/30 mb-[3px] rounded-full"></div>
             <div className="w-3 h-[2px] bg-black/30 rounded-full"></div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -430,55 +477,94 @@ const Stage: React.FC<StageProps> = ({
       )}
 
       {/* AI Suggestion Popup */}
-      {activeSuggestion && (
-        <div className="fixed top-[15%] left-[55%] w-[420px] bg-[#1E1E1E] border border-[#333] rounded-lg shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-4 zoom-in-95">
-          <div className="bg-yellow-400 text-black px-4 py-3 font-bold text-[10px] uppercase tracking-widest flex justify-between items-center rounded-t-lg">
-            <span>REWRITE SUGGESTION</span>
-            <button onClick={onCloseSuggestion} className="hover:scale-125 transition-transform text-lg leading-none">×</button>
-          </div>
-          <div className="p-6">
-            <div className="mb-4">
-               <div className="text-[9px] font-black text-gray-500 uppercase tracking-tighter mb-1.5">CURRENT:</div>
-               <div className="text-[11px] text-gray-400 font-mono italic leading-relaxed border-l-2 border-white/10 pl-3">"{activeSuggestion.original}"</div>
-            </div>
-            
-            <div className="mb-6 p-4 bg-white/5 rounded-lg border border-yellow-400/20 shadow-inner">
-               <div className="text-[9px] font-black text-yellow-500 uppercase tracking-tighter mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></div>
-                  AI RECOMMENDATION:
-               </div>
-               <div className="text-sm text-white font-medium leading-relaxed">
-                  {activeSuggestion.suggestion}
-               </div>
-            </div>
+      <AnimatePresence>
+        {activeSuggestion && (
+          <>
+            <SuggestionLine activeSuggestion={activeSuggestion} boxPos={suggestionBoxPos} />
+            <motion.div 
+              ref={suggestionRef}
+              drag
+              dragMomentum={false}
+              onDrag={(e, info) => {
+                if (suggestionRef.current) {
+                  const rect = suggestionRef.current.getBoundingClientRect();
+                  setSuggestionBoxPos({ 
+                    x: rect.left + rect.width / 2, 
+                    y: rect.top + rect.height / 2 
+                  });
+                }
+              }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ scale: smoothZoom }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed top-[20%] left-[55%] w-[340px] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
+            >
+              <div className="bg-yellow-400 text-black px-4 py-2.5 font-black text-[9px] uppercase tracking-[0.2em] flex justify-between items-center rounded-t-xl">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={12} />
+                  <span>AI REWRITE</span>
+                </div>
+                <button onClick={onCloseSuggestion} className="hover:rotate-90 transition-transform p-1">
+                  <X size={14} />
+                </button>
+              </div>
+              
+              <div className="p-5">
+                <div className="mb-4">
+                  <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+                    CURRENT
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-medium leading-relaxed italic border-l-2 border-white/5 pl-3 py-1 bg-white/[0.02] rounded-r">
+                    "{activeSuggestion.original.length > 100 ? activeSuggestion.original.substring(0, 100) + '...' : activeSuggestion.original}"
+                  </div>
+                </div>
+                
+                <div className="mb-6 p-4 bg-yellow-400/5 rounded-lg border border-yellow-400/20 relative group">
+                  <div className="text-[8px] font-black text-yellow-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></div>
+                    SUGGESTION
+                  </div>
+                  <div className="text-xs text-white font-semibold leading-relaxed">
+                    {activeSuggestion.suggestion}
+                  </div>
+                </div>
 
-            <div className="flex gap-3">
-              <button onClick={onCloseSuggestion} className="flex-1 py-2.5 bg-[#111] border border-[#333] text-gray-400 text-[10px] font-bold rounded uppercase tracking-widest hover:text-white hover:bg-white/5 transition-all">DISCARD</button>
-              <button 
-                onClick={() => handleApplySuggestion(activeSuggestion)} 
-                className="flex-1 py-2.5 bg-yellow-400 text-black text-[10px] font-black rounded uppercase tracking-widest hover:bg-yellow-300 shadow-[0_5px_15px_rgba(251,191,36,0.3)] hover:-translate-y-0.5 transition-all active:translate-y-0"
-              >
-                APPLY CHANGE
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <div className="flex gap-2">
+                  <button 
+                    onClick={onCloseSuggestion} 
+                    className="flex-1 py-2 bg-white/5 border border-white/10 text-gray-400 text-[9px] font-bold rounded-lg uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    DISCARD
+                  </button>
+                  <button 
+                    onClick={() => handleApplySuggestion(activeSuggestion)} 
+                    className="flex-2 py-2 bg-yellow-400 text-black text-[9px] font-black rounded-lg uppercase tracking-widest hover:bg-yellow-300 shadow-[0_5px_15px_rgba(251,191,36,0.2)] hover:-translate-y-0.5 transition-all active:translate-y-0 flex items-center justify-center gap-2"
+                  >
+                    APPLY <ArrowRight size={12} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-      <div 
+      <motion.div 
         ref={containerRef}
-        style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
-        className="transition-transform duration-150 will-change-transform flex flex-col gap-10 items-center"
+        style={{ scale: smoothZoom, transformOrigin: 'top center' }}
+        className="flex flex-col gap-10 items-center"
       >
         {mode === 'RESUME' ? (
-          <PaperPage themeClass={themeClass}>
-            <div className="h-full flex flex-col">
-              <div className={`mb-8 ${theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE ? 'bg-[#2c3e50] text-white -m-12 p-12 mb-8' : ''}`}>
+          <PaperPage themeClass={themeClass} isMinimal={theme === ResumeTheme.MINIMAL}>
+            <div className={`h-full flex flex-col ${theme === ResumeTheme.MINIMAL ? 'p-16' : 'p-12'}`}>
+              <div className={`mb-8 ${theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE ? 'bg-[#2c3e50] text-white -m-12 p-12 mb-8' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-center border-b border-gray-100 pb-8' : ''}`}>
                 <EditableText 
                   fieldKey="name"
                   value={resume.name}
                   onChange={(v) => onUpdateResume('name', v)}
-                  className={`text-4xl font-extrabold uppercase tracking-tight ${theme === ResumeTheme.MODERN ? 'font-["Playfair_Display"] text-5xl normal-case' : ''}`}
+                  className={`text-4xl font-extrabold uppercase tracking-tight ${theme === ResumeTheme.MODERN ? 'font-["Playfair_Display"] text-5xl normal-case' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-3xl font-light tracking-[0.3em] text-gray-900' : ''}`}
                   isEditing={isEditing}
                   animatingField={animatingField}
                   displayedValues={displayedValues}
@@ -487,7 +573,7 @@ const Stage: React.FC<StageProps> = ({
                   fieldKey="role"
                   value={resume.role}
                   onChange={(v) => onUpdateResume('role', v)}
-                  className="text-sm font-medium text-gray-500 uppercase tracking-[0.2em] mt-2"
+                  className={`text-sm font-medium uppercase tracking-[0.2em] mt-2 ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-light' : 'text-gray-500'}`}
                   isEditing={isEditing}
                   animatingField={animatingField}
                   displayedValues={displayedValues}
@@ -496,32 +582,32 @@ const Stage: React.FC<StageProps> = ({
 
               <div className="grid grid-cols-12 gap-8 flex-1 overflow-visible">
                 <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
-                  <SectionTitle title="Contact" />
-                  <div className="text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium">
+                  <SectionTitle title="Contact" minimal={theme === ResumeTheme.MINIMAL} />
+                  <div className={`text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400' : ''}`}>
                      <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                      <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                      <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                   </div>
-                  <SectionTitle title="Skills" />
+                  <SectionTitle title="Skills" minimal={theme === ResumeTheme.MINIMAL} />
                   <div className="flex flex-wrap gap-1 mb-8">
                     <EditableText 
                       fieldKey="skills"
                       value={resume.skills.join(', ')}
                       onChange={(v) => onUpdateResume('skills', v.split(',').map(s => s.trim()).filter(s => s !== ''))}
-                      className="text-[10px] font-bold tracking-tight text-gray-700 w-full"
+                      className={`text-[10px] font-bold tracking-tight w-full ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-normal' : 'text-gray-700'}`}
                       isEditing={isEditing}
                       animatingField={animatingField}
                       displayedValues={displayedValues}
                     />
                   </div>
-                  <SectionTitle title="Education" />
+                  <SectionTitle title="Education" minimal={theme === ResumeTheme.MINIMAL} />
                   {resume.education.map(ed => (
                     <div key={ed.id} className="mb-4">
                       <EditableText 
                         fieldKey={`ed-degree-${ed.id}`}
                         value={ed.degree}
                         onChange={(v) => onUpdateEducation(ed.id, 'degree', v)}
-                        className="text-[11px] font-bold tracking-tight"
+                        className={`text-[11px] font-bold tracking-tight ${theme === ResumeTheme.MINIMAL ? 'font-normal' : ''}`}
                         isEditing={isEditing}
                         animatingField={animatingField}
                         displayedValues={displayedValues}
@@ -551,20 +637,21 @@ const Stage: React.FC<StageProps> = ({
                   ))}
                 </div>
                 <div className="col-span-8 overflow-visible">
-                  <SectionTitle title="Executive Summary" />
+                  <SectionTitle title="Executive Summary" minimal={theme === ResumeTheme.MINIMAL} />
                   <div className="mb-8">
                     <EditableText 
                       fieldKey="summary"
                       value={resume.summary} 
                       onChange={(v) => onUpdateResume('summary', v)} 
-                      className="text-[11px] leading-relaxed text-gray-700 font-medium" 
+                      className={`text-[11px] leading-relaxed font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-500 font-normal' : 'text-gray-700'}`} 
                       multiline 
                       isEditing={isEditing}
                       animatingField={animatingField}
                       displayedValues={displayedValues}
+                      isActiveSuggestion={isFieldActiveSuggestion('summary')}
                     />
                   </div>
-                  <SectionTitle title="Experience" />
+                  <SectionTitle title="Experience" minimal={theme === ResumeTheme.MINIMAL} />
                   <div className="space-y-6">
                     {resume.experience.map(exp => (
                       <div key={exp.id} className="group">
@@ -573,10 +660,11 @@ const Stage: React.FC<StageProps> = ({
                             fieldKey={`exp-title-${exp.id}`}
                             value={exp.title} 
                             onChange={(v) => onUpdateExperience(exp.id, 'title', v)} 
-                            className="font-bold text-sm tracking-tight flex-1 mr-2" 
+                            className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`} 
                             isEditing={isEditing}
                             animatingField={animatingField}
                             displayedValues={displayedValues}
+                            isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
                           />
                           <EditableText 
                             fieldKey={`exp-period-${exp.id}`}
@@ -586,26 +674,29 @@ const Stage: React.FC<StageProps> = ({
                             isEditing={isEditing}
                             animatingField={animatingField}
                             displayedValues={displayedValues}
+                            isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
                           />
                         </div>
                         <EditableText 
                           fieldKey={`exp-company-${exp.id}`}
                           value={exp.company} 
                           onChange={(v) => onUpdateExperience(exp.id, 'company', v)} 
-                          className="text-[11px] font-bold text-yellow-600/80 mb-2 uppercase tracking-widest" 
+                          className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-yellow-600/80'}`} 
                           isEditing={isEditing}
                           animatingField={animatingField}
                           displayedValues={displayedValues}
+                          isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
                         />
                         <EditableText 
                           fieldKey={`exp-desc-${exp.id}`}
                           value={exp.description} 
                           onChange={(v) => onUpdateExperience(exp.id, 'description', v)} 
-                          className="text-[11px] leading-relaxed text-gray-700" 
+                          className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`} 
                           multiline 
                           isEditing={isEditing}
                           animatingField={animatingField}
                           displayedValues={displayedValues}
+                          isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
                         />
                       </div>
                     ))}
@@ -618,9 +709,9 @@ const Stage: React.FC<StageProps> = ({
           <>
             {letterPages.map((pageContent, index) => (
               <PaperPage key={index} themeClass={themeClass} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
-                <div className="h-full flex flex-col">
+                <div className={`h-full flex flex-col p-14`}>
                    {index === 0 ? (
-                     <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-12 -mt-12 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
+                     <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-14 -mt-14 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
                         <div className={`${theme === LetterTheme.CLASSIC ? 'text-3xl font-serif mb-2' : 'font-black uppercase tracking-tighter text-4xl mb-1'}`}>{resume.name}</div>
                         <div className={`${theme === LetterTheme.CLASSIC ? 'text-[10px] text-gray-400 italic mb-4' : 'text-[11px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-6'}`}>{resume.role}</div>
                         <div className={`flex justify-between items-center text-[10px] font-mono font-bold text-gray-400 w-full ${theme === LetterTheme.CLASSIC ? 'flex-col gap-1 italic font-serif' : ''}`}>
@@ -670,7 +761,7 @@ const Stage: React.FC<StageProps> = ({
             ))}
           </>
         )}
-      </div>
+      </motion.div>
 
       {/* Reimagined Action Pill */}
       <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1A1A1A] px-3 py-3 rounded-full flex gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.6)] items-center z-30 border border-white/5">
@@ -707,10 +798,59 @@ const Stage: React.FC<StageProps> = ({
   );
 };
 
-const SectionTitle: React.FC<{ title: string }> = ({ title }) => (
-  <div className="text-[10px] font-black uppercase tracking-[0.2em] border-b-2 border-black/10 pb-1 mb-4 text-black/80">
+const SectionTitle: React.FC<{ title: string, minimal?: boolean }> = ({ title, minimal }) => (
+  <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${minimal ? 'text-gray-400 border-none pb-0 mb-2' : 'border-b-2 border-black/10 pb-1 text-black/80'}`}>
     {title}
   </div>
 );
+
+const SuggestionLine: React.FC<{ activeSuggestion: AISuggestion, boxPos: { x: number, y: number } }> = ({ activeSuggestion, boxPos }) => {
+  const [targetPos, setTargetPos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const updateTarget = () => {
+      let targetId = activeSuggestion.field;
+      if (targetId.startsWith('experience:')) {
+        targetId = `exp-desc-${targetId.split(':')[1]}`;
+      }
+      const el = document.getElementById(targetId);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setTargetPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+      }
+    };
+    updateTarget();
+    window.addEventListener('scroll', updateTarget);
+    window.addEventListener('resize', updateTarget);
+    const interval = setInterval(updateTarget, 100); // Poll for position changes during zoom/drag
+    return () => {
+      window.removeEventListener('scroll', updateTarget);
+      window.removeEventListener('resize', updateTarget);
+      clearInterval(interval);
+    };
+  }, [activeSuggestion]);
+
+  if (!targetPos.x || !boxPos.x) return null;
+
+  return (
+    <svg className="fixed inset-0 pointer-events-none z-[65] w-full h-full">
+      <defs>
+        <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
+          <circle cx="5" cy="5" r="4" fill="#fbbf24" />
+        </marker>
+      </defs>
+      <motion.path
+        d={`M ${boxPos.x} ${boxPos.y} L ${targetPos.x} ${targetPos.y}`}
+        stroke="#fbbf24"
+        strokeWidth="1.5"
+        strokeDasharray="4 4"
+        fill="none"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 0.6 }}
+        markerEnd="url(#dot)"
+      />
+    </svg>
+  );
+};
 
 export default Stage;

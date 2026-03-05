@@ -103,37 +103,64 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
         
         {mode === 'RESUME' ? (
-          <div className="flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-hide animate-in fade-in duration-300">
+          <div className="flex flex-col gap-6 overflow-y-auto pr-1 scrollbar-hide animate-in fade-in duration-300">
             {suggestions.length === 0 && !isAiLoading && (
               <div className="p-4 bg-white/5 border border-dashed border-[#333] rounded-lg text-center">
                   <p className="text-[11px] text-gray-500 italic">Resume is optimally architected.</p>
               </div>
             )}
             
-            {suggestions.map(s => (
-              <button 
-                key={s.id}
-                disabled={s.isApplied}
-                onClick={() => onSelectSuggestion(s)}
-                className={`group text-left flex items-start gap-3 p-3 bg-white/5 border border-transparent rounded-lg transition-all ${s.isApplied ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'hover:border-yellow-400 cursor-pointer hover:bg-yellow-400/5'}`}
-              >
-                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${s.isApplied ? 'bg-yellow-400 border-yellow-400' : 'border-[#444] group-hover:border-yellow-400'}`}>
-                  {s.isApplied && (
-                    <svg className="w-2.5 h-2.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`flex justify-between text-[9px] font-black mb-1 tracking-widest uppercase transition-colors ${s.isApplied ? 'text-gray-500 line-through' : 'text-yellow-400'}`}>
-                    {s.type}
+            {/* Pending Suggestions */}
+            {suggestions.filter(s => !s.isApplied).length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-[8px] font-black text-yellow-400/50 uppercase tracking-[0.2em] mb-1">Pending Improvements</div>
+                {suggestions.filter(s => !s.isApplied).map(s => (
+                  <button 
+                    key={s.id}
+                    onClick={() => onSelectSuggestion(s)}
+                    className="group text-left flex items-start gap-3 p-3 bg-white/5 border border-transparent rounded-lg transition-all hover:border-yellow-400 cursor-pointer hover:bg-yellow-400/5"
+                  >
+                    <div className="mt-0.5 w-4 h-4 rounded-full border-2 border-[#444] flex items-center justify-center shrink-0 transition-colors group-hover:border-yellow-400">
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between text-[9px] font-black mb-1 tracking-widest uppercase text-yellow-400">
+                        {s.type}
+                      </div>
+                      <div className="text-xs leading-relaxed font-medium text-gray-400 group-hover:text-gray-200">
+                        {s.suggestion}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Completed Suggestions */}
+            {suggestions.filter(s => s.isApplied).length > 0 && (
+              <div className="flex flex-col gap-2 opacity-60">
+                <div className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Completed</div>
+                {suggestions.filter(s => s.isApplied).map(s => (
+                  <div 
+                    key={s.id}
+                    className="text-left flex items-start gap-3 p-3 bg-white/[0.02] border border-white/5 rounded-lg transition-all"
+                  >
+                    <div className="mt-0.5 w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center shrink-0">
+                      <svg className="w-2.5 h-2.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between text-[9px] font-black mb-1 tracking-widest uppercase text-gray-500 line-through">
+                        {s.type}
+                      </div>
+                      <div className="text-xs leading-relaxed font-medium text-gray-600 line-through">
+                        {s.suggestion}
+                      </div>
+                    </div>
                   </div>
-                  <div className={`text-xs leading-relaxed font-medium transition-all ${s.isApplied ? 'text-gray-600 line-through' : 'text-gray-400 group-hover:text-gray-200'}`}>
-                    {s.suggestion}
-                  </div>
-                </div>
-              </button>
-            ))}
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col flex-1 gap-4 animate-in fade-in duration-300">
