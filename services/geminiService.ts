@@ -4,11 +4,11 @@ import { ResumeData, AISuggestion } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
-export const getAISuggestions = async (resume: ResumeData): Promise<AISuggestion[]> => {
+export const getAISuggestions = async (resume: ResumeData, jobContext?: string): Promise<AISuggestion[]> => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analyze this resume and provide 3 punchy, high-impact rewrite suggestions to improve ATS score and professional impact. 
+      contents: `Analyze this resume ${jobContext ? `against this job context: "${jobContext}"` : ''} and provide 3-5 punchy, high-impact rewrite suggestions to improve ATS score and professional impact. 
       Format as JSON array of objects with keys: id, type (REWRITE, IMPACT, QUANTIFY), original (the specific text part being improved), suggestion (the improved text), field (which field it belongs to).
       
       CRITICAL: For experience fields, the 'field' value MUST be 'experience:<id>' where <id> is the ID provided in the context. For the summary, use 'summary'.
@@ -45,21 +45,40 @@ export const getAISuggestions = async (resume: ResumeData): Promise<AISuggestion
   }
 };
 
-export const calculateATSScore = (resume: ResumeData): number => {
-  let score = 50; // Base score
-  
-  if (resume.summary.length > 100) score += 10;
-  if (resume.experience.length >= 2) score += 10;
-  if (resume.skills.length >= 5) score += 10;
-  
-  // Look for "impact" words
-  const impactWords = ['orchestrated', 'spearheaded', 'managed', 'developed', 'optimized', 'reduced', 'increased', 'architected', 'facilitated'];
-  const desc = resume.experience.map(e => e.description.toLowerCase()).join(' ');
-  impactWords.forEach(word => {
-    if (desc.includes(word)) score += 2;
-  });
+export const calculateATSScore = async (resume: ResumeData, jobContext?: string): Promise<number> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Evaluate this resume ${jobContext ? `against this job context: "${jobContext}"` : ''} and provide a single integer score from 0 to 100 representing its ATS compatibility and professional strength.
+      
+      Resume:
+      ${JSON.stringify(resume)}
+      
+      Return ONLY the integer number.`,
+    });
+    
+    const score = parseInt(response.text?.trim() || '50');
+    return isNaN(score) ? 50 : Math.min(100, Math.max(0, score));
+  } catch (error) {
+    console.error("ATS Score Error:", error);
+    return 50;
+  }
+};
 
-  return Math.min(score, 100);
+export const analyzeJobLink = async (url: string): Promise<string> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Extract the key job requirements, responsibilities, and desired skills from this URL: ${url}`,
+      config: {
+        tools: [{ urlContext: {} }]
+      },
+    });
+    return response.text || "Could not extract job details.";
+  } catch (error) {
+    console.error("Job Link Analysis Error:", error);
+    return "Error analyzing job link.";
+  }
 };
 
 export const generateCoverLetter = async (resume: ResumeData, jobDescription: string): Promise<string> => {

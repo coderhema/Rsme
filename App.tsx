@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from './types';
-import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume } from './services/geminiService';
+import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume, analyzeJobLink } from './services/geminiService';
 import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
 
@@ -47,28 +47,37 @@ const App: React.FC = () => {
   const [resumeTheme, setResumeTheme] = useState<ResumeTheme>(ResumeTheme.MODERN);
   const [letterTheme, setLetterTheme] = useState<LetterTheme>(LetterTheme.MODERN);
   const [atsScore, setAtsScore] = useState<number>(0);
+  const [isAtsLoading, setIsAtsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [completedSuggestions, setCompletedSuggestions] = useState<AISuggestion[]>([]);
+  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
   const [roast, setRoast] = useState<string | null>(null);
+  const [jobLinks, setJobLinks] = useState<string[]>([]);
+  const [jobContext, setJobContext] = useState<string>("");
+
+  const updateATSScore = useCallback(async () => {
+    setIsAtsLoading(true);
+    const score = await calculateATSScore(resume, jobContext);
+    setAtsScore(score);
+    setIsAtsLoading(false);
+  }, [resume, jobContext]);
 
   useEffect(() => {
-    setAtsScore(calculateATSScore(resume));
-  }, [resume]);
+    updateATSScore();
+  }, [resume, updateATSScore]);
 
   const fetchSuggestions = useCallback(async () => {
     if (mode !== 'RESUME') return;
     setIsAiLoading(true);
-    const results = await getAISuggestions(resume);
-    setSuggestions(prev => {
-      const appliedIds = prev.filter(s => s.isApplied).map(s => s.id);
-      return results.map(res => ({
-        ...res,
-        isApplied: appliedIds.includes(res.id)
-      }));
-    });
+    const results = await getAISuggestions(resume, jobContext);
+    setSuggestions(results.map(res => ({
+      ...res,
+      isApplied: false
+    })));
     setIsAiLoading(false);
-  }, [resume, mode]);
+  }, [resume, mode, jobContext]);
 
   useEffect(() => {
     const timer = setTimeout(fetchSuggestions, 3000);
@@ -94,19 +103,40 @@ const App: React.FC = () => {
   };
 
   const applySuggestion = (suggestion: AISuggestion) => {
-    if (suggestion.field === 'summary') {
-      handleUpdateResume('summary', suggestion.suggestion);
-    } else if (suggestion.field.startsWith('experience')) {
-      const expId = suggestion.field.split(':')[1];
-      if (expId) {
-        handleUpdateExperience(expId, 'description', suggestion.suggestion);
+    setResume(prev => {
+      let nextResume = { ...prev };
+      if (suggestion.field === 'summary') {
+        nextResume.summary = suggestion.suggestion;
+      } else if (suggestion.field.startsWith('experience')) {
+        const expId = suggestion.field.split(':')[1];
+        if (expId) {
+          nextResume.experience = nextResume.experience.map(exp => 
+            exp.id === expId ? { ...exp, description: suggestion.suggestion } : exp
+          );
+        }
       }
-    }
+      return nextResume;
+    });
     
-    setSuggestions(prev => prev.map(s => 
-      s.id === suggestion.id ? { ...s, isApplied: true } : s
-    ));
+    const appliedSuggestion = { ...suggestion, isApplied: true };
+    setCompletedSuggestions(prev => [appliedSuggestion, ...prev]);
+    setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
+    setSelectedSuggestionIds(prev => prev.filter(id => id !== suggestion.id));
     setActiveSuggestion(null);
+  };
+
+  const handleApplySelected = () => {
+    const toApply = suggestions.filter(s => selectedSuggestionIds.includes(s.id));
+    toApply.forEach(s => applySuggestion(s));
+  };
+
+  const handleAddJobLink = async (url: string) => {
+    if (!url) return;
+    setJobLinks(prev => [...prev, url]);
+    setIsAiLoading(true);
+    const details = await analyzeJobLink(url);
+    setJobContext(prev => prev + "\n\n" + details);
+    setIsAiLoading(false);
   };
 
   const handleGenerateCoverLetter = async () => {
@@ -131,7 +161,14 @@ const App: React.FC = () => {
         mode={mode}
         setMode={setMode}
         atsScore={atsScore}
+        isAtsLoading={isAtsLoading}
         suggestions={suggestions}
+        completedSuggestions={completedSuggestions}
+        selectedSuggestionIds={selectedSuggestionIds}
+        onToggleSuggestionSelection={(id) => setSelectedSuggestionIds(prev => 
+          prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        )}
+        onApplySelected={handleApplySelected}
         isAiLoading={isAiLoading}
         theme={mode === 'RESUME' ? resumeTheme : letterTheme}
         setTheme={mode === 'RESUME' ? setResumeTheme : setLetterTheme}
@@ -139,6 +176,8 @@ const App: React.FC = () => {
         onGenerateCoverLetter={handleGenerateCoverLetter}
         coverLetterContext={coverLetterContext}
         onUpdateLetterContext={setCoverLetterContext}
+        jobLinks={jobLinks}
+        onAddJobLink={handleAddJobLink}
       />
       
       <Stage 

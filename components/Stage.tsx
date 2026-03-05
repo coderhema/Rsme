@@ -122,7 +122,7 @@ const ClosingBlock: React.FC<{ resume: ResumeData, theme: ResumeTheme | LetterTh
         {resume.name}
       </div>
     </div>
-    <div className={`w-24 h-12 italic font-serif text-2xl select-none px-2 flex items-end ${theme === LetterTheme.CLASSIC ? 'border-b border-gray-300 text-gray-400 opacity-60' : 'border-b-2 border-yellow-400 text-gray-200 opacity-40'}`}>
+    <div className={`w-24 h-12 italic font-serif text-2xl select-none px-2 flex items-end ${theme === LetterTheme.CLASSIC ? 'border-b border-gray-300 text-gray-400 opacity-60' : 'border-b-2 border-black/10 text-gray-200 opacity-40'}`}>
       {resume.name.split(' ')[0]}
     </div>
   </div>
@@ -132,8 +132,13 @@ const Stage: React.FC<StageProps> = ({
   resume, coverLetter, mode, theme, activeSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
   onRoast, roast, onCloseRoast
 }) => {
-  const [zoom, setZoom] = useState(0.85);
-  const smoothZoom = useSpring(zoom, { stiffness: 300, damping: 30 });
+  const [zoom, setZoom] = useState<number>(0.85);
+  const zoomValue = useMotionValue(zoom);
+  useEffect(() => {
+    zoomValue.set(zoom);
+  }, [zoom]);
+  const smoothZoom = useSpring(zoomValue, { stiffness: 300, damping: 30 });
+  const suggestionScale = useTransform(smoothZoom as any, [0.5, 1, 2], [1.2, 1, 0.9]);
   
   const [isDragging, setIsDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -145,14 +150,20 @@ const Stage: React.FC<StageProps> = ({
   const suggestionRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (activeSuggestion && suggestionRef.current) {
-      const rect = suggestionRef.current.getBoundingClientRect();
-      setSuggestionBoxPos({ 
-        x: rect.left + rect.width / 2, 
-        y: rect.top + rect.height / 2 
-      });
-    }
-  }, [activeSuggestion]);
+    const updatePos = () => {
+      if (activeSuggestion && suggestionRef.current) {
+        const rect = suggestionRef.current.getBoundingClientRect();
+        setSuggestionBoxPos({ 
+          x: rect.left + rect.width / 2, 
+          y: rect.top + rect.height / 2 
+        });
+      }
+    };
+    
+    updatePos();
+    const interval = setInterval(updatePos, 50); // Poll for scale/position changes
+    return () => clearInterval(interval);
+  }, [activeSuggestion, zoom]);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -496,7 +507,7 @@ const Stage: React.FC<StageProps> = ({
               }}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ scale: smoothZoom }}
+              style={{ scale: suggestionScale }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="fixed top-[20%] left-[55%] w-[340px] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
             >
@@ -709,9 +720,9 @@ const Stage: React.FC<StageProps> = ({
           <>
             {letterPages.map((pageContent, index) => (
               <PaperPage key={index} themeClass={themeClass} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
-                <div className={`h-full flex flex-col p-14`}>
+                <div className={`h-full flex flex-col p-12`}>
                    {index === 0 ? (
-                     <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-14 -mt-14 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
+                     <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-12 -mt-12 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
                         <div className={`${theme === LetterTheme.CLASSIC ? 'text-3xl font-serif mb-2' : 'font-black uppercase tracking-tighter text-4xl mb-1'}`}>{resume.name}</div>
                         <div className={`${theme === LetterTheme.CLASSIC ? 'text-[10px] text-gray-400 italic mb-4' : 'text-[11px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-6'}`}>{resume.role}</div>
                         <div className={`flex justify-between items-center text-[10px] font-mono font-bold text-gray-400 w-full ${theme === LetterTheme.CLASSIC ? 'flex-col gap-1 italic font-serif' : ''}`}>
@@ -735,7 +746,7 @@ const Stage: React.FC<StageProps> = ({
                    )}
                    
                    <div className="space-y-8 flex-1 overflow-hidden">
-                    {index === 0 && <div className="text-sm font-black text-black uppercase tracking-widest border-l-4 border-yellow-400 pl-4 py-1">Dear Hiring Manager,</div>}
+                    {index === 0 && <div className="text-sm font-black text-black uppercase tracking-widest py-1">Dear Hiring Manager,</div>}
                     
                     {index === 0 ? (
                       <EditableText 
