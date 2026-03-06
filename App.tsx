@@ -56,6 +56,7 @@ const App: React.FC = () => {
   const [roast, setRoast] = useState<string | null>(null);
   const [jobLinks, setJobLinks] = useState<string[]>([]);
   const [jobContext, setJobContext] = useState<string>("");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const updateATSScore = useCallback(async () => {
     setIsAtsLoading(true);
@@ -183,6 +184,8 @@ const App: React.FC = () => {
         onUpdateLetterContext={setCoverLetterContext}
         jobLinks={jobLinks}
         onAddJobLink={handleAddJobLink}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       
       <Stage 

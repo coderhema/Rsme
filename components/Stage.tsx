@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
-import { Sparkles, X, Check, ArrowRight, PenLine, Plus } from 'lucide-react';
+import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus } from 'iconoir-react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 import mammoth from 'mammoth';
 import { parseResume } from '../services/geminiService';
@@ -57,7 +57,7 @@ const EditableText: React.FC<EditableTextProps> = ({
   const isThisAnimating = animatingField === fieldKey;
   const valToDisplay = isThisAnimating ? (displayedValues[fieldKey] || value) : value;
 
-  const highlightClass = isActiveSuggestion ? 'ring-2 ring-yellow-400 ring-offset-4 ring-offset-white bg-yellow-50 rounded-sm transition-all duration-500' : '';
+  const highlightClass = isActiveSuggestion ? 'ring-2 ring-violet-400 ring-offset-4 ring-offset-white bg-violet-50 rounded-sm transition-all duration-500' : '';
 
   if (!isEditing && !isThisAnimating) {
     return <div id={fieldKey} className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap ${highlightClass}`}>{valToDisplay}</div>;
@@ -65,18 +65,18 @@ const EditableText: React.FC<EditableTextProps> = ({
   
   if (isThisAnimating) {
     return (
-      <div id={fieldKey} className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap relative text-yellow-600 font-medium bg-yellow-400/5 px-2 -mx-2 rounded transition-all duration-300`}>
+      <div id={fieldKey} className={`${className} min-h-[1.2em] break-words whitespace-pre-wrap relative text-violet-600 font-medium bg-violet-400/5 px-2 -mx-2 rounded transition-all duration-300`}>
         {valToDisplay}
-        <span className="inline-block w-[3px] h-[1.2em] bg-yellow-500 ml-1 translate-y-1 animate-pulse"></span>
-        <div className="absolute -top-5 right-0 flex items-center gap-1.5 px-2 py-1 bg-black rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(251,191,36,0.2)]">
-          <PenLine size={10} className="text-yellow-400 animate-bounce" />
-          <div className="text-[8px] font-black uppercase tracking-[0.15em] bg-gradient-to-r from-yellow-400 via-white to-yellow-400 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent">Typecrafting...</div>
+        <span className="inline-block w-[3px] h-[1.2em] bg-violet-500 ml-1 translate-y-1 animate-pulse"></span>
+        <div className="absolute -top-5 right-0 flex items-center gap-1.5 px-2 py-1 bg-black rounded-full border border-violet-500/30 shadow-[0_0_15px_rgba(167,139,250,0.2)]">
+          <PenLine width={10} height={10} className="text-violet-400 animate-bounce" />
+          <div className="text-[8px] font-black uppercase tracking-[0.15em] bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent">Typecrafting...</div>
         </div>
       </div>
     );
   }
   
-  const sharedClasses = `${className} w-full bg-transparent focus:outline-none focus:bg-yellow-50/50 hover:bg-black/5 cursor-text transition-colors px-1 -mx-1 rounded border-b border-transparent focus:border-yellow-400/30 overflow-hidden no-scrollbar ${highlightClass}`;
+  const sharedClasses = `${className} w-full bg-transparent focus:outline-none focus:bg-violet-50/50 hover:bg-black/5 cursor-text transition-colors px-1 -mx-1 rounded border-b border-transparent focus:border-violet-400/30 overflow-hidden no-scrollbar ${highlightClass}`;
   
   return multiline ? (
     <textarea 
@@ -457,7 +457,7 @@ const Stage: React.FC<StageProps> = ({
 
   return (
     <div 
-      className={`flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth transition-colors duration-300 ${isOver ? 'bg-yellow-400/5' : ''}`}
+      className={`flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth transition-colors duration-300 ${isOver ? 'bg-violet-400/5' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -470,13 +470,13 @@ const Stage: React.FC<StageProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-12 z-50 border-4 border-dashed border-yellow-400/40 rounded-3xl flex flex-col items-center justify-center bg-yellow-400/5 pointer-events-none"
+            className="fixed inset-12 z-50 border-4 border-dashed border-violet-400/40 rounded-3xl flex flex-col items-center justify-center bg-violet-400/5 pointer-events-none"
           >
-            <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(251,191,36,0.3)] mb-6">
-              <Plus size={40} className="text-black" />
+            <div className="w-20 h-20 bg-violet-400 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(167,139,250,0.3)] mb-6">
+              <Plus width={40} height={40} className="text-black" />
             </div>
-            <div className="text-yellow-400 font-black text-2xl uppercase tracking-[0.2em]">Drop to Import</div>
-            <div className="text-yellow-400/60 text-xs font-mono mt-2 uppercase tracking-widest">PDF, DOCX, or TXT</div>
+            <div className="text-violet-400 font-black text-2xl uppercase tracking-[0.2em]">Drop to Import</div>
+            <div className="text-violet-400/60 text-xs font-mono mt-2 uppercase tracking-widest">PDF, DOCX, or TXT</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -488,11 +488,11 @@ const Stage: React.FC<StageProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-8 right-8 z-[100] bg-[#1A1A1A] border border-yellow-400/20 rounded-xl p-2.5 flex items-center gap-3 shadow-2xl"
+            className="fixed bottom-8 right-8 z-[100] bg-[#1A1A1A] border border-violet-400/20 rounded-xl p-2.5 flex items-center gap-3 shadow-2xl"
           >
             <div className="relative w-5 h-5">
-              <div className="absolute inset-0 border-2 border-yellow-400/20 rounded-full"></div>
-              <div className="absolute inset-0 border-2 border-yellow-400 rounded-full border-t-transparent animate-spin"></div>
+              <div className="absolute inset-0 border-2 border-violet-400/20 rounded-full"></div>
+              <div className="absolute inset-0 border-2 border-violet-400 rounded-full border-t-transparent animate-spin"></div>
             </div>
             <div className="flex flex-col">
               <div className="text-white font-black text-[9px] uppercase tracking-[0.1em]">Uploading...</div>
@@ -505,9 +505,9 @@ const Stage: React.FC<StageProps> = ({
       {/* Zoom Control */}
       <div className="fixed right-12 top-1/2 -translate-y-1/2 flex items-center gap-6 h-[400px] z-40 group/zoom">
         <div className="flex flex-col justify-between h-full text-[10px] font-mono font-black select-none pr-2 text-right transition-colors">
-           <span className={`transition-all duration-300 ${zoom >= 1.75 ? 'text-yellow-400 scale-110' : 'text-gray-600'}`}>200%</span>
-           <span className={`transition-all duration-300 ${zoom > 0.85 && zoom < 1.15 ? 'text-yellow-400 scale-110' : 'text-gray-600'}`}>100%</span>
-           <span className={`transition-all duration-300 ${zoom <= 0.75 ? 'text-yellow-400 scale-110' : 'text-gray-600'}`}>50%</span>
+           <span className={`transition-all duration-300 ${zoom >= 1.75 ? 'text-violet-400 scale-110' : 'text-gray-600'}`}>200%</span>
+           <span className={`transition-all duration-300 ${zoom > 0.85 && zoom < 1.15 ? 'text-violet-400 scale-110' : 'text-gray-600'}`}>100%</span>
+           <span className={`transition-all duration-300 ${zoom <= 0.75 ? 'text-violet-400 scale-110' : 'text-gray-600'}`}>50%</span>
         </div>
         
         <div 
@@ -530,15 +530,15 @@ const Stage: React.FC<StageProps> = ({
           <div className="absolute left-0 right-0 bottom-0 h-[1px] bg-white/20"></div>
 
           <motion.div 
-            className={`absolute left-0 w-6 h-12 bg-yellow-400 rounded-lg shadow-[0_0_30px_rgba(251,191,36,0.4)] flex flex-col items-center justify-center pointer-events-auto cursor-ns-resize z-10`}
+            className={`absolute left-0 w-6 h-12 bg-violet-400 rounded-lg shadow-[0_0_30px_rgba(167,139,250,0.4)] flex flex-col items-center justify-center pointer-events-auto cursor-ns-resize z-10`}
             style={{ 
                 bottom: `${((zoom - 0.5) / 1.5) * 100}%`,
                 y: '50%'
             }}
-            whileHover={{ scale: 1.1, shadow: '0_0_40px_rgba(251,191,36,0.6)' }}
+            whileHover={{ scale: 1.1, shadow: '0_0_40px_rgba(167,139,250,0.6)' }}
             whileTap={{ scale: 0.95 }}
             animate={{ 
-              shadow: isDragging ? '0_0_45px_rgba(251,191,36,0.6)' : '0_0_30px_rgba(251,191,36,0.4)'
+              shadow: isDragging ? '0_0_45px_rgba(167,139,250,0.6)' : '0_0_30px_rgba(167,139,250,0.4)'
             }}
             onMouseDown={(e) => {
                 e.stopPropagation();
@@ -652,13 +652,13 @@ const Stage: React.FC<StageProps> = ({
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="fixed top-[20%] left-[55%] w-[340px] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
             >
-              <div className="bg-yellow-400 text-black px-4 py-2.5 font-black text-[9px] uppercase tracking-[0.2em] flex justify-between items-center rounded-t-xl">
+              <div className="bg-violet-400 text-black px-4 py-2.5 font-black text-[9px] uppercase tracking-[0.2em] flex justify-between items-center rounded-t-xl">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={12} />
+                  <Sparkles width={12} height={12} />
                   <span>AI REWRITE</span>
                 </div>
                 <button onClick={onCloseSuggestion} className="hover:rotate-90 transition-transform p-1">
-                  <X size={14} />
+                  <X width={14} height={14} />
                 </button>
               </div>
               
@@ -673,9 +673,9 @@ const Stage: React.FC<StageProps> = ({
                   </div>
                 </div>
                 
-                <div className="mb-6 p-4 bg-yellow-400/5 rounded-lg border border-yellow-400/20 relative group">
-                  <div className="text-[8px] font-black text-yellow-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></div>
+                <div className="mb-6 p-4 bg-violet-400/5 rounded-lg border border-violet-400/20 relative group">
+                  <div className="text-[8px] font-black text-violet-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
                     SUGGESTION
                   </div>
                   <div className="text-xs text-white font-semibold leading-relaxed">
@@ -692,9 +692,9 @@ const Stage: React.FC<StageProps> = ({
                   </button>
                   <button 
                     onClick={() => handleApplySuggestion(activeSuggestion)} 
-                    className="flex-2 py-2 bg-yellow-400 text-black text-[9px] font-black rounded-lg uppercase tracking-widest hover:bg-yellow-300 shadow-[0_5px_15px_rgba(251,191,36,0.2)] hover:-translate-y-0.5 transition-all active:translate-y-0 flex items-center justify-center gap-2"
+                    className="flex-2 py-2 bg-violet-400 text-black text-[9px] font-black rounded-lg uppercase tracking-widest hover:bg-violet-300 shadow-[0_5px_15px_rgba(167,139,250,0.2)] hover:-translate-y-0.5 transition-all active:translate-y-0 flex items-center justify-center gap-2"
                   >
-                    APPLY <ArrowRight size={12} />
+                    APPLY <ArrowRight width={12} height={12} />
                   </button>
                 </div>
               </div>
@@ -837,7 +837,7 @@ const Stage: React.FC<StageProps> = ({
                                   fieldKey={`exp-company-${exp.id}`}
                                   value={exp.company} 
                                   onChange={(v) => onUpdateExperience(exp.id, 'company', v)} 
-                                  className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-yellow-600/80'}`} 
+                                  className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`} 
                                   isEditing={isEditing}
                                   animatingField={animatingField}
                                   displayedValues={displayedValues}
@@ -895,7 +895,7 @@ const Stage: React.FC<StageProps> = ({
                               fieldKey={`exp-company-${exp.id}`}
                               value={exp.company} 
                               onChange={(v) => onUpdateExperience(exp.id, 'company', v)} 
-                              className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-yellow-600/80'}`} 
+                              className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`} 
                               isEditing={isEditing}
                               animatingField={animatingField}
                               displayedValues={displayedValues}
