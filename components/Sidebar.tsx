@@ -61,11 +61,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="w-[360px] bg-[#1E1E1E] border-r border-[#333] flex flex-col p-6 gap-6 z-10 shadow-2xl overflow-y-auto overflow-x-hidden">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 font-bold text-sm tracking-widest text-white">
-          <div className="w-4 h-4 rounded-full bg-yellow-400 relative shadow-[0_0_10px_rgba(251,191,36,0.3)]">
-            <div className="absolute inset-1 rounded-full bg-[#1E1E1E]"></div>
+        <div className="flex items-center gap-2.5 font-black text-sm tracking-[0.2em] text-white">
+          <div className="w-7 h-7 flex items-center justify-center bg-yellow-400 rounded-lg shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+            <svg viewBox="0 0 100 100" className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M32 82V18H58C78 18 78 45 58 45H32M58 45L78 82" />
+            </svg>
           </div>
-          RESUME.AI
+          TYPECRAFT
         </div>
         <div className="flex bg-[#111] p-1 rounded-md">
           <button 

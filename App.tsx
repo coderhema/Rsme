@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from './types';
-import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume, analyzeJobLink } from './services/geminiService';
+import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume, analyzeJobLink, parseResume } from './services/geminiService';
 import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
 
@@ -155,6 +155,11 @@ const App: React.FC = () => {
     setIsAiLoading(false);
   };
 
+  const handleUploadResume = async (data: ResumeData) => {
+    setResume(data);
+    setMode('RESUME');
+  };
+
   return (
     <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans">
       <Sidebar 
@@ -193,8 +198,11 @@ const App: React.FC = () => {
         onUpdateEducation={handleUpdateEducation}
         onUpdateCoverLetter={setCoverLetter}
         onRoast={handleRoast}
+        onUploadResume={handleUploadResume}
         roast={roast}
         onCloseRoast={() => setRoast(null)}
+        isAiLoading={isAiLoading}
+        setIsAiLoading={setIsAiLoading}
       />
     </div>
   );

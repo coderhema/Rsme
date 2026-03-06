@@ -9,6 +9,9 @@ export const getAISuggestions = async (resume: ResumeData, jobContext?: string):
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Analyze this resume ${jobContext ? `against this job context: "${jobContext}"` : ''} and provide 3-5 punchy, high-impact rewrite suggestions to improve ATS score and professional impact. 
+      
+      CRITICAL: Focus on CONCISENESS. Suggestions should be brief but powerful to ensure the resume fits well on the page. Use strong action verbs and quantify results where possible.
+      
       Format as JSON array of objects with keys: id, type (REWRITE, IMPACT, QUANTIFY), original (the specific text part being improved), suggestion (the improved text), field (which field it belongs to).
       
       CRITICAL: For experience fields, the 'field' value MUST be 'experience:<id>' where <id> is the ID provided in the context. For the summary, use 'summary'.
@@ -119,5 +122,78 @@ export const roastResume = async (resume: ResumeData | string): Promise<string> 
   } catch (error) {
     console.error("Roast Error:", error);
     return "Even the AI is too stunned to speak about this resume.";
+  }
+};
+
+export const parseResume = async (content: string | { data: string, mimeType: string }): Promise<ResumeData | null> => {
+  try {
+    const parts: any[] = typeof content === 'string' 
+      ? [{ text: `Extract structured resume data from this text. Maintain the professional tone and ensure the descriptions are neatly formatted and VERY concise (max 2-3 bullet points per role). \n\n${content}` }]
+      : [
+          { inlineData: content },
+          { text: "Extract structured resume data from this document. Maintain the professional tone and ensure the descriptions are neatly formatted and VERY concise (max 2-3 bullet points per role). Ensure all experience and education items have unique string IDs." }
+        ];
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: { parts },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            role: { type: Type.STRING },
+            email: { type: Type.STRING },
+            phone: { type: Type.STRING },
+            location: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            experience: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  company: { type: Type.STRING },
+                  period: { type: Type.STRING },
+                  description: { type: Type.STRING }
+                },
+                required: ["id", "title", "company", "period", "description"]
+              }
+            },
+            skills: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            education: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  degree: { type: Type.STRING },
+                  school: { type: Type.STRING },
+                  year: { type: Type.STRING }
+                },
+                required: ["id", "degree", "school", "year"]
+              }
+            }
+          },
+          required: ["name", "role", "email", "phone", "location", "summary", "experience", "skills", "education"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || 'null');
+    if (parsed) {
+      // Ensure IDs are strings and unique if AI failed to do so perfectly
+      parsed.experience = parsed.experience.map((exp: any, i: number) => ({ ...exp, id: exp.id || `exp-${i}` }));
+      parsed.education = parsed.education.map((ed: any, i: number) => ({ ...ed, id: ed.id || `ed-${i}` }));
+    }
+    return parsed;
+  } catch (error) {
+    console.error("Parse Resume Error:", error);
+    return null;
   }
 };
