@@ -1,5 +1,5 @@
 {
-  "name": "Typecraft",
+  "name": "rsme",
   "description": "A minimalistic desktop-class resume builder powered by Gemini AI for real-time ATS scoring and content optimization.",
   "requestFramePermissions": []
 }

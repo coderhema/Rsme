@@ -70,7 +70,7 @@ const EditableText: React.FC<EditableTextProps> = ({
         <span className="inline-block w-[3px] h-[1.2em] bg-violet-500 ml-1 translate-y-1 animate-pulse"></span>
         <div className="absolute -top-5 right-0 flex items-center gap-1.5 px-2 py-1 bg-black rounded-full border border-violet-500/30 shadow-[0_0_15px_rgba(167,139,250,0.2)]">
           <PenLine width={10} height={10} className="text-violet-400 animate-bounce" />
-          <div className="text-[8px] font-black uppercase tracking-[0.15em] bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent">Typecrafting...</div>
+          <div className="text-[8px] font-black uppercase tracking-[0.15em] bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent">Processing...</div>
         </div>
       </div>
     );
@@ -420,13 +420,13 @@ const Stage: React.FC<StageProps> = ({
   };
 
   const shareToWhatsApp = () => {
-    const text = encodeURIComponent(`Check out my professional document created with Typecraft!`);
+    const text = encodeURIComponent(`Check out my professional document created with rsme!`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const shareViaEmail = () => {
     const subject = encodeURIComponent('My Professional Document');
-    const body = encodeURIComponent(`Hi, please find my document generated via Typecraft.`);
+    const body = encodeURIComponent(`Hi, please find my document generated via rsme.`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 

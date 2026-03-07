@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <path d="M32 82V18H58C78 18 78 45 58 45H32M58 45L78 82" />
               </svg>
             </div>
-            {!isCollapsed && <span>TYPECRAFT</span>}
+            {!isCollapsed && <span>RSME</span>}
           </div>
           {!isCollapsed && (
             <div className="flex bg-[#111] p-1 rounded-md">
