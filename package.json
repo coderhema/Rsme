@@ -10,10 +10,10 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.41.0",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.2.0",
     "framer-motion": "^12.35.0",
+    "groq-sdk": "^0.37.0",
     "iconoir-react": "^7.11.0",
     "lucide-react": "^0.577.0",
     "mammoth": "^1.11.0",
