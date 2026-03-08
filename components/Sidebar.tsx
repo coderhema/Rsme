@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-y-auto no-scrollbar`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} mb-2`}>
           <div className="flex items-center gap-2.5 font-black text-sm tracking-[0.2em] text-white">
-            <div className="w-12 h-12 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 flex items-center justify-center shrink-0">
               <img src="/logo.svg" alt="rsme logo" className="w-full h-full object-contain" />
             </div>
           </div>
@@ -126,8 +126,26 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-8 h-[1px] bg-[#333]" />
             <div className="flex flex-col gap-4 items-center">
               <div className="relative group">
-                <div className="w-10 h-10 rounded-lg bg-[#111] border border-violet-400/20 flex items-center justify-center text-violet-400 font-black text-xs">
-                  {atsScore}
+                <div className="w-10 h-10 flex items-center justify-center relative bg-[#111] rounded-full shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] border border-[#333]">
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                    {Array.from({ length: 20 }).map((_, i) => {
+                      const isActive = atsScore >= (i + 1) * 5; 
+                      return (
+                        <line 
+                          key={i} 
+                          x1="50" y1="8" x2="50" y2="20" 
+                          stroke={isActive ? "#a78bfa" : "#2a2a2a"} 
+                          strokeWidth="4" 
+                          strokeLinecap="round" 
+                          transform={`rotate(${i * 18} 50 50)`} 
+                          className="transition-colors duration-500"
+                        />
+                      );
+                    })}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10 w-full h-full rounded-full">
+                    <span className="text-[12px] font-black text-white leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(167,139,250,0.8)] z-10">{atsScore}</span>
+                  </div>
                 </div>
                 <div className="absolute left-full ml-4 px-2 py-1 bg-black text-[8px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
                   ATS SCORE: {atsScore}
@@ -149,30 +167,54 @@ const Sidebar: React.FC<SidebarProps> = ({
         {!isCollapsed && (
           <>
             {mode === 'RESUME' && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 font-semibold">Realtime ATS Score</div>
-                <div className="bg-[#111] border border-[#333] rounded-xl p-5 flex items-center gap-5 relative overflow-hidden">
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300 group">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 font-semibold group-hover:text-violet-400 transition-colors">Realtime ATS Score</div>
+                <div className="bg-gradient-to-br from-[#181818] to-[#111] border border-[#333] hover:border-violet-400/50 rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(167,139,250,0.1)]">
                   {isAtsLoading && (
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10">
-                      <div className="flex gap-1">
-                        <div className="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-1 h-1 bg-violet-400 rounded-full animate-bounce"></div>
+                      <div className="flex gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></div>
                       </div>
                     </div>
                   )}
-                  <div className="flex flex-col items-center justify-center shrink-0 w-16 h-16 bg-[#181818] border border-violet-400/20 rounded-lg">
-                     <span className="text-2xl font-black text-violet-400 leading-none tracking-tight">{atsScore}</span>
-                     <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest mt-1">SCORE</span>
-                  </div>
-
-                  <div className="flex-1 overflow-hidden">
-                    <div className="text-sm font-bold text-white mb-0.5 truncate uppercase tracking-tight">Optimization</div>
-                    <div className="text-[11px] text-gray-400 leading-tight">
-                      {atsScore > 80 ? 'Exceptional candidate profile' : atsScore > 60 ? 'Strong competitive profile' : 'Optimization required'}
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-center justify-center shrink-0 w-[76px] h-[76px] relative bg-[#111] rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] border border-[#333]">
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                        {Array.from({ length: 40 }).map((_, i) => {
+                          const isActive = atsScore >= (i + 1) * 2.5; 
+                          const isMajor = i % 5 === 0;
+                          return (
+                            <line 
+                              key={i} 
+                              x1="50" 
+                              y1={isMajor ? "6" : "10"} 
+                              x2="50" 
+                              y2={isMajor ? "22" : "18"} 
+                              stroke={isActive ? "#a78bfa" : "#2a2a2a"} 
+                              strokeWidth={isMajor ? "3" : "2"} 
+                              strokeLinecap="round" 
+                              transform={`rotate(${i * 9} 50 50)`} 
+                              className="transition-colors duration-500"
+                            />
+                          );
+                        })}
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 w-full h-full rounded-full">
+                        <span className="text-[28px] font-black text-white leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(167,139,250,0.8)] z-10">{atsScore}</span>
+                      </div>
                     </div>
-                    <div className="mt-2.5 h-1 w-full bg-[#222] rounded-full overflow-hidden">
-                        <div className="h-full bg-violet-400 transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(167,139,250,0.2)]" style={{ width: `${atsScore}%` }}></div>
+
+                    <div className="flex-1">
+                      <div className="text-xs font-black text-white mb-1 uppercase tracking-widest flex items-center gap-2">
+                        Profile Health
+                        {atsScore > 80 && <CheckCircle width={14} height={14} className="text-green-400" />}
+                      </div>
+                      <div className="text-[11px] text-gray-400 leading-relaxed font-medium">
+                        {atsScore > 80 ? 'Exceptional profile. Ready to apply.' : atsScore > 60 ? 'Strong competitive profile.' : 'Optimization required.'}
+                      </div>
                     </div>
                   </div>
                 </div>
