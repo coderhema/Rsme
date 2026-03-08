@@ -83,20 +83,18 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Toggle Button */}
       <button 
         onClick={onToggleCollapse}
-        className="absolute top-6 -right-3 z-20 w-6 h-6 bg-[#333] border border-[#444] rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors shadow-lg"
+        className="absolute bottom-8 -right-5 z-50 w-10 h-10 bg-[#181818] border border-[#333] hover:border-violet-400 rounded-full flex items-center justify-center text-gray-400 hover:text-violet-400 transition-all shadow-[0_0_20px_rgba(0,0,0,0.6)] group title-tooltip"
+        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
       >
-        {isCollapsed ? <SidebarExpand strokeWidth={2} width={12} height={12} /> : <SidebarCollapse strokeWidth={2} width={12} height={12} />}
+        {isCollapsed ? <SidebarExpand className="group-hover:scale-110 transition-transform" strokeWidth={2} width={20} height={20} /> : <SidebarCollapse className="group-hover:scale-110 transition-transform" strokeWidth={2} width={20} height={20} />}
       </button>
 
       <div className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-y-auto no-scrollbar`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} mb-2`}>
           <div className="flex items-center gap-2.5 font-black text-sm tracking-[0.2em] text-white">
-            <div className="w-7 h-7 flex items-center justify-center bg-violet-400 rounded-lg shadow-[0_0_15px_rgba(167,139,250,0.3)] shrink-0">
-              <svg viewBox="0 0 100 100" className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M32 82V18H58C78 18 78 45 58 45H32M58 45L78 82" />
-              </svg>
+            <div className="w-12 h-12 flex items-center justify-center shrink-0">
+              <img src="/logo.svg" alt="rsme logo" className="w-full h-full object-contain" />
             </div>
-            {!isCollapsed && <span>RSME</span>}
           </div>
           {!isCollapsed && (
             <div className="flex bg-[#111] p-1 rounded-md">
@@ -350,7 +348,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
                   )}
-                  {isStylesCollapsed ? <NavArrowDown width={14} height={14} className="text-gray-500" /> : <NavArrowUp width={14} height={14} className="text-gray-500" />}
+                  {isStylesCollapsed ? <NavArrowUp width={14} height={14} className="text-gray-500" /> : <NavArrowDown width={14} height={14} className="text-gray-500" />}
                 </div>
               </div>
               
