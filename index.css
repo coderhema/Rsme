@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Google Sans Flex", "Google Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", serif;
+  
+  --color-violet-50: #f0f4ff;
+  --color-violet-100: #e0e9ff;
+  --color-violet-200: #c2d3ff;
+  --color-violet-300: #94b4ff;
+  --color-violet-400: #0044DD;
+  --color-violet-500: #0036b0;
+  --color-violet-600: #002883;
+  --color-violet-700: #001b5c;
+  --color-violet-800: #00123d;
+  --color-violet-900: #00081f;
+
   --animate-shimmer: shimmer 3s linear infinite;
 
   @keyframes shimmer {

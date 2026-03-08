@@ -2,21 +2,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppMode, AISuggestion, ResumeTheme, LetterTheme } from '../types';
-import { 
-  Link as LinkIcon, 
-  Plus, 
-  CheckCircle, 
-  Circle, 
-  NavArrowDown, 
-  NavArrowUp, 
-  SidebarCollapse, 
-  SidebarExpand, 
-  Archery as Target, 
-  Sparks as Sparkles, 
-  Page, 
-  ViewGrid, 
-  Settings 
+import {
+  Link as LinkIcon,
+  Plus,
+  CheckCircle,
+  Circle,
+  NavArrowDown,
+  NavArrowUp,
+  SidebarCollapse,
+  SidebarExpand,
+  Archery as Target,
+  Sparks as Sparkles,
+  Page,
+  ViewGrid,
+  Settings
 } from 'iconoir-react';
+import { Tooltip } from './Tooltip';
 
 interface SidebarProps {
   mode: AppMode;
@@ -41,7 +42,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
+const Sidebar: React.FC<SidebarProps> = ({
   mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -75,21 +76,26 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [mode]);
 
   return (
-    <motion.div 
+    <motion.div
       initial={false}
       animate={{ width: isCollapsed ? 80 : 360 }}
-      className="bg-[#1E1E1E] border-r border-[#333] flex flex-col z-10 shadow-2xl overflow-hidden relative"
+      className="bg-[#1E1E1E] border-r border-[#333] flex flex-col z-10 shadow-2xl relative"
     >
       {/* Toggle Button */}
-      <button 
-        onClick={onToggleCollapse}
-        className="absolute bottom-8 -right-5 z-50 w-10 h-10 bg-[#181818] border border-[#333] hover:border-violet-400 rounded-full flex items-center justify-center text-gray-400 hover:text-violet-400 transition-all shadow-[0_0_20px_rgba(0,0,0,0.6)] group title-tooltip"
-        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      <Tooltip
+        content={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        side="left"
+        align="center"
       >
-        {isCollapsed ? <SidebarExpand className="group-hover:scale-110 transition-transform" strokeWidth={2} width={20} height={20} /> : <SidebarCollapse className="group-hover:scale-110 transition-transform" strokeWidth={2} width={20} height={20} />}
-      </button>
+        <button
+          onClick={onToggleCollapse}
+          className="absolute bottom-8 -right-5 z-50 w-10 h-10 bg-[#181818] border border-[#333] hover:border-violet-400 rounded-full flex items-center justify-center text-gray-400 hover:text-violet-400 transition-all shadow-[0_0_20px_rgba(0,0,0,0.6)] group"
+        >
+          {isCollapsed ? <SidebarExpand className="group-hover:scale-110 transition-transform" strokeWidth={2} width={20} height={20} /> : <SidebarCollapse className="group-hover:scale-110 transition-transform" strokeWidth={2} width={20} height={20} />}
+        </button>
+      </Tooltip>
 
-      <div className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-y-auto no-scrollbar`}>
+      <div className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-visible`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} mb-2`}>
           <div className="flex items-center gap-2.5 font-black text-sm tracking-[0.2em] text-white">
             <div className="w-10 h-10 flex items-center justify-center shrink-0">
@@ -98,17 +104,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {!isCollapsed && (
             <div className="flex bg-[#111] p-1 rounded-md">
-              <button 
+              <button
                 onClick={() => setMode('RESUME')}
-                className={`px-3 py-1.5 text-[10px] font-bold rounded transition-all ${mode === 'RESUME' ? 'bg-[#1E1E1E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`px-3 py-1.5 text-[11px] font-semibold rounded transition-all ${mode === 'RESUME' ? 'bg-[#1E1E1E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                RESUME
+                Resume
               </button>
-              <button 
+              <button
                 onClick={() => setMode('COVER_LETTER')}
-                className={`px-3 py-1.5 text-[10px] font-bold rounded transition-all ${mode === 'COVER_LETTER' ? 'bg-[#1E1E1E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`px-3 py-1.5 text-[11px] font-semibold rounded transition-all ${mode === 'COVER_LETTER' ? 'bg-[#1E1E1E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                LETTER
+                Letter
               </button>
             </div>
           )}
@@ -116,50 +122,56 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {isCollapsed && (
           <div className="flex flex-col gap-6 items-center w-full">
-            <button 
-              onClick={() => setMode(mode === 'RESUME' ? 'COVER_LETTER' : 'RESUME')}
-              className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-violet-400 hover:bg-violet-400/10 transition-all"
-              title={mode === 'RESUME' ? 'Switch to Cover Letter' : 'Switch to Resume'}
-            >
-              {mode === 'RESUME' ? <Page width={20} height={20} /> : <ViewGrid width={20} height={20} />}
-            </button>
+            <Tooltip content={mode === 'RESUME' ? 'Cover Letter' : 'Resume Maker'} side="right">
+              <button
+                onClick={() => setMode(mode === 'RESUME' ? 'COVER_LETTER' : 'RESUME')}
+                className="relative p-3 bg-white/5 rounded-xl text-gray-400 hover:text-violet-400 hover:bg-violet-400/10 transition-all group"
+              >
+                {mode === 'RESUME' ? <Page width={20} height={20} /> : <ViewGrid width={20} height={20} />}
+              </button>
+            </Tooltip>
             <div className="w-8 h-[1px] bg-[#333]" />
             <div className="flex flex-col gap-4 items-center">
-              <div className="relative group">
-                <div className="w-10 h-10 flex items-center justify-center relative bg-[#111] rounded-full shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] border border-[#333]">
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                    {Array.from({ length: 20 }).map((_, i) => {
-                      const isActive = atsScore >= (i + 1) * 5; 
-                      return (
-                        <line 
-                          key={i} 
-                          x1="50" y1="8" x2="50" y2="20" 
-                          stroke={isActive ? "#a78bfa" : "#2a2a2a"} 
-                          strokeWidth="4" 
-                          strokeLinecap="round" 
-                          transform={`rotate(${i * 18} 50 50)`} 
-                          className="transition-colors duration-500"
-                        />
-                      );
-                    })}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10 w-full h-full rounded-full">
-                    <span className="text-[12px] font-black text-white leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(167,139,250,0.8)] z-10">{atsScore}</span>
+              <Tooltip content={`ATS Score: ${atsScore}`} side="right">
+                <div className="relative group">
+                  <div className="w-10 h-10 flex items-center justify-center relative bg-[#111] rounded-full shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] border border-[#333]">
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                      {Array.from({ length: 20 }).map((_, i) => {
+                        const isActive = atsScore >= (i + 1) * 5;
+                        return (
+                          <line
+                            key={i}
+                            x1="50" y1="8" x2="50" y2="20"
+                            stroke={isActive ? "#0044DD" : "#2a2a2a"}
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            transform={`rotate(${i * 18} 50 50)`}
+                            className="transition-colors duration-500"
+                          />
+                        );
+                      })}
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center z-10 w-full h-full rounded-full">
+                      <span className="text-[12px] font-black text-white leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(0,68,221,0.8)] z-10">{atsScore}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="absolute left-full ml-4 px-2 py-1 bg-black text-[8px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                  ATS SCORE: {atsScore}
-                </div>
-              </div>
-              <button className="p-3 text-gray-500 hover:text-violet-400 transition-colors" title="AI Suggestions">
-                <Sparkles width={20} height={20} />
-              </button>
-              <button className="p-3 text-gray-500 hover:text-violet-400 transition-colors" title="Job Links">
-                <Target width={20} height={20} />
-              </button>
-              <button className="p-3 text-gray-500 hover:text-violet-400 transition-colors" title="Settings">
-                <Settings width={20} height={20} />
-              </button>
+              </Tooltip>
+              <Tooltip content="AI Suggestions" side="right">
+                <button className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors">
+                  <Sparkles width={20} height={20} />
+                </button>
+              </Tooltip>
+              <Tooltip content="Job Target Links" side="right">
+                <button className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors">
+                  <Target width={20} height={20} />
+                </button>
+              </Tooltip>
+              <Tooltip content="Settings / Config" side="right">
+                <button className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors">
+                  <Settings width={20} height={20} />
+                </button>
+              </Tooltip>
             </div>
           </div>
         )}
@@ -169,7 +181,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {mode === 'RESUME' && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300 group">
                 <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 font-semibold group-hover:text-violet-400 transition-colors">Realtime ATS Score</div>
-                <div className="bg-gradient-to-br from-[#181818] to-[#111] border border-[#333] hover:border-violet-400/50 rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(167,139,250,0.1)]">
+                <div className="bg-gradient-to-br from-[#181818] to-[#111] border border-[#333] hover:border-violet-400/50 rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(0,68,221,0.1)]">
                   {isAtsLoading && (
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10">
                       <div className="flex gap-1.5">
@@ -179,31 +191,31 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col items-center justify-center shrink-0 w-[76px] h-[76px] relative bg-[#111] rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] border border-[#333]">
                       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
                         {Array.from({ length: 40 }).map((_, i) => {
-                          const isActive = atsScore >= (i + 1) * 2.5; 
+                          const isActive = atsScore >= (i + 1) * 2.5;
                           const isMajor = i % 5 === 0;
                           return (
-                            <line 
-                              key={i} 
-                              x1="50" 
-                              y1={isMajor ? "6" : "10"} 
-                              x2="50" 
-                              y2={isMajor ? "22" : "18"} 
-                              stroke={isActive ? "#a78bfa" : "#2a2a2a"} 
-                              strokeWidth={isMajor ? "3" : "2"} 
-                              strokeLinecap="round" 
-                              transform={`rotate(${i * 9} 50 50)`} 
+                            <line
+                              key={i}
+                              x1="50"
+                              y1={isMajor ? "6" : "10"}
+                              x2="50"
+                              y2={isMajor ? "22" : "18"}
+                              stroke={isActive ? "#0044DD" : "#2a2a2a"}
+                              strokeWidth={isMajor ? "3" : "2"}
+                              strokeLinecap="round"
+                              transform={`rotate(${i * 9} 50 50)`}
                               className="transition-colors duration-500"
                             />
                           );
                         })}
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center z-10 w-full h-full rounded-full">
-                        <span className="text-[28px] font-black text-white leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(167,139,250,0.8)] z-10">{atsScore}</span>
+                        <span className="text-[28px] font-black text-white leading-none tracking-tighter drop-shadow-[0_0_8px_rgba(0,68,221,0.8)] z-10">{atsScore}</span>
                       </div>
                     </div>
 
@@ -223,14 +235,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-3 font-semibold">Target Job Links</div>
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Paste job URL..."
                         value={newJobLink}
                         onChange={(e) => setNewJobLink(e.target.value)}
                         className="flex-1 bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-[11px] text-gray-300 focus:outline-none focus:border-violet-400"
                       />
-                      <button 
+                      <button
                         onClick={() => {
                           onAddJobLink(newJobLink);
                           setNewJobLink("");
@@ -262,22 +274,22 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 {isAiLoading && <div className="text-[10px] text-violet-400 animate-pulse uppercase">AI Processing...</div>}
               </div>
-              
+
               {mode === 'RESUME' ? (
                 <div className="flex flex-col gap-6 overflow-y-auto pr-1 scrollbar-hide animate-in fade-in duration-300">
                   {suggestions.length === 0 && !isAiLoading && (
                     <div className="p-4 bg-white/5 border border-dashed border-[#333] rounded-lg text-center">
-                        <p className="text-[11px] text-gray-500 italic">Resume is optimally architected.</p>
+                      <p className="text-[11px] text-gray-500 italic">Resume is optimally architected.</p>
                     </div>
                   )}
-                  
+
                   {/* Pending Suggestions */}
                   {suggestions.length > 0 && (
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center mb-1">
                         <div className="text-[8px] font-black text-violet-400/50 uppercase tracking-[0.2em]">Pending Improvements</div>
                         {selectedSuggestionIds.length > 0 && (
-                          <button 
+                          <button
                             onClick={onApplySelected}
                             className="px-2 py-1 bg-violet-400 text-black text-[8px] font-black uppercase tracking-widest rounded hover:bg-violet-300 transition-colors shadow-lg shadow-violet-400/20"
                           >
@@ -286,7 +298,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         )}
                       </div>
                       {suggestions.map(s => (
-                        <div 
+                        <div
                           key={s.id}
                           className={`group text-left flex items-start gap-3 p-3 bg-white/5 border rounded-lg transition-all cursor-pointer ${selectedSuggestionIds.includes(s.id) ? 'border-violet-400 bg-violet-400/5' : 'border-transparent hover:border-white/20 hover:bg-white/10'}`}
                           onClick={() => onToggleSuggestionSelection(s.id)}
@@ -315,7 +327,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex flex-col gap-2 opacity-60">
                       <div className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Completed</div>
                       {completedSuggestions.map(s => (
-                        <div 
+                        <div
                           key={s.id}
                           className="text-left flex items-start gap-3 p-3 bg-white/[0.02] border border-white/5 rounded-lg transition-all"
                         >
@@ -348,7 +360,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       onChange={(e) => onUpdateLetterContext?.(e.target.value)}
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={onGenerateCoverLetter}
                     disabled={isAiLoading}
                     className={`w-full py-4 bg-violet-400 text-black font-black text-[10px] rounded-xl transition-all shadow-xl active:scale-[0.98] transform uppercase tracking-[0.2em] ${isAiLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-violet-300 hover:shadow-violet-400/20'}`}
@@ -360,7 +372,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className="mt-auto border-t border-[#333] pt-4">
-              <div 
+              <div
                 onClick={() => setIsStylesCollapsed(!isStylesCollapsed)}
                 className="w-full flex justify-between items-center mb-3 group cursor-pointer"
               >
@@ -370,7 +382,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center gap-2">
                   {!isStylesCollapsed && totalPages > 1 && (
                     <div className="flex gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           scrollToIndex(Math.max(0, currentPage - 1));
@@ -379,7 +391,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       >
                         <NavArrowDown width={12} height={12} className="rotate-90 text-white" />
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           scrollToIndex(Math.min(totalPages - 1, currentPage + 1));
@@ -393,33 +405,32 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {isStylesCollapsed ? <NavArrowUp width={14} height={14} className="text-gray-500" /> : <NavArrowDown width={14} height={14} className="text-gray-500" />}
                 </div>
               </div>
-              
+
               <AnimatePresence initial={false}>
                 {!isStylesCollapsed && (
-                  <motion.div 
+                  <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div 
+                    <div
                       ref={scrollContainerRef}
                       className="flex overflow-x-hidden scroll-smooth snap-x snap-mandatory no-scrollbar"
                     >
                       {Array.from({ length: totalPages }).map((_, pageIdx) => (
                         <div key={pageIdx} className="min-w-full grid grid-cols-3 gap-2 snap-start pb-2">
                           {currentThemes.slice(pageIdx * 3, pageIdx * 3 + 3).map(t => (
-                            <button 
+                            <button
                               key={t}
                               onClick={() => setTheme(t)}
-                              className={`aspect-[3/4] border-2 rounded-lg overflow-hidden transition-all flex flex-col group ${theme === t ? 'border-violet-400 shadow-[0_0_15px_rgba(167,139,250,0.2)]' : 'border-[#333] hover:border-gray-500'}`}
+                              className={`aspect-[3/4] border-2 rounded-lg overflow-hidden transition-all flex flex-col group ${theme === t ? 'border-violet-400 shadow-[0_0_15px_rgba(0,68,221,0.2)]' : 'border-[#333] hover:border-gray-500'}`}
                             >
-                              <div className={`flex-1 m-1.5 rounded-sm shadow-sm ${
-                                mode === 'RESUME' 
+                              <div className={`flex-1 m-1.5 rounded-sm shadow-sm ${mode === 'RESUME'
                                   ? (t === ResumeTheme.MODERN ? 'theme-preview-modern' : t === ResumeTheme.MINIMAL ? 'theme-preview-minimal' : 'theme-preview-creative')
                                   : (t === LetterTheme.BOLD ? 'theme-preview-creative' : t === LetterTheme.MODERN ? 'theme-preview-modern' : 'theme-preview-minimal')
-                              } bg-white opacity-90 group-hover:opacity-100 transition-opacity`}></div>
+                                } bg-white opacity-90 group-hover:opacity-100 transition-opacity`}></div>
                               <div className={`text-[8px] pb-1.5 text-center font-bold tracking-tighter truncate px-1 uppercase ${theme === t ? 'text-violet-400' : 'text-gray-500 group-hover:text-gray-300'}`}>{t}</div>
                             </button>
                           ))}
