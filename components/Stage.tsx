@@ -112,10 +112,15 @@ const EditableText: React.FC<EditableTextProps> = ({
 
 const PaperPage: React.FC<React.PropsWithChildren<{ className?: string, themeClass: string, isMinimal?: boolean, isShimmering?: boolean }>> = ({ children, className = "", themeClass, isMinimal, isShimmering }) => (
   <div
-    className={`w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black overflow-hidden relative ${isMinimal ? 'shadow-sm border border-gray-50' : 'resume-shadow shadow-2xl border border-gray-100'} ${themeClass} ${className} ${isShimmering ? 'after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/60 after:to-transparent after:animate-shimmer after:bg-[length:200%_100%]' : ''}`}
+    className={`resume-paper-page w-[${PAGE_WIDTH}px] min-w-[${PAGE_WIDTH}px] h-[${PAGE_HEIGHT}px] bg-white text-black overflow-hidden relative ${isMinimal ? 'shadow-sm border border-gray-50' : 'resume-shadow shadow-2xl border border-gray-100'} ${themeClass} ${className} ${isShimmering ? 'after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/60 after:to-transparent after:animate-shimmer after:bg-[length:200%_100%]' : ''} print:shadow-none print:border-none`}
     style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT }}
   >
     {children}
+    {/* Custom Print Watermark */}
+    <div className="hidden print:flex absolute bottom-12 right-12 items-center gap-1.5 opacity-40 z-50">
+      <img src="/logo.svg" alt="rsme logo" className="h-5 w-auto brightness-0" />
+      <span className="text-[10px] font-black uppercase tracking-widest text-black">rsme</span>
+    </div>
   </div>
 );
 
@@ -738,272 +743,276 @@ const Stage: React.FC<StageProps> = ({
       <motion.div
         ref={containerRef}
         style={{ scale: smoothZoom, transformOrigin: 'top center' }}
-        className="flex flex-col gap-10 items-center"
+        className="flex flex-col gap-10 items-center print-reset-transform print:gap-0 print:block"
       >
         {mode === 'RESUME' ? (
           <>
             {resumePages.map((pageExperiences, index) => (
-              <PaperPage key={index} themeClass={themeClass} isMinimal={theme === ResumeTheme.MINIMAL} isShimmering={isAiLoading} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
-                <div className={`h-full flex flex-col ${theme === ResumeTheme.MINIMAL ? 'p-16' : 'p-12'}`}>
-                  {index === 0 ? (
-                    <>
-                      <div className={`mb-8 ${theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE ? 'bg-[#2c3e50] text-white -m-12 p-12 mb-8' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-center border-b border-gray-100 pb-8' : ''}`}>
-                        <EditableText
-                          fieldKey="name"
-                          value={resume.name}
-                          onChange={(v) => onUpdateResume('name', v)}
-                          className={`text-4xl font-extrabold uppercase tracking-tight ${theme === ResumeTheme.MODERN ? 'font-["Playfair_Display"] text-5xl normal-case' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-3xl font-light tracking-[0.3em] text-gray-900' : ''}`}
-                          isEditing={isEditing}
-                          animatingField={animatingField}
-                          displayedValues={displayedValues}
-                        />
-                        <EditableText
-                          fieldKey="role"
-                          value={resume.role}
-                          onChange={(v) => onUpdateResume('role', v)}
-                          className={`text-sm font-medium uppercase tracking-[0.2em] mt-2 ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-light' : 'text-gray-500'}`}
-                          isEditing={isEditing}
-                          animatingField={animatingField}
-                          displayedValues={displayedValues}
-                        />
-                      </div>
+              <div key={index} className="print-page-wrapper">
+                <PaperPage themeClass={themeClass} isMinimal={theme === ResumeTheme.MINIMAL} isShimmering={isAiLoading} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
+                  <div className={`h-full flex flex-col ${theme === ResumeTheme.MINIMAL ? 'p-16' : 'p-12'}`}>
+                    {index === 0 ? (
+                      <>
+                        <div className={`mb-8 ${theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE ? 'bg-[#2c3e50] text-white -m-12 p-12 mb-8' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-center border-b border-gray-100 pb-8' : ''}`}>
+                          <EditableText
+                            fieldKey="name"
+                            value={resume.name}
+                            onChange={(v) => onUpdateResume('name', v)}
+                            className={`text-4xl font-extrabold uppercase tracking-tight ${theme === ResumeTheme.MODERN ? 'font-["Playfair_Display"] text-5xl normal-case' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-3xl font-light tracking-[0.3em] text-gray-900' : ''}`}
+                            isEditing={isEditing}
+                            animatingField={animatingField}
+                            displayedValues={displayedValues}
+                          />
+                          <EditableText
+                            fieldKey="role"
+                            value={resume.role}
+                            onChange={(v) => onUpdateResume('role', v)}
+                            className={`text-sm font-medium uppercase tracking-[0.2em] mt-2 ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-light' : 'text-gray-500'}`}
+                            isEditing={isEditing}
+                            animatingField={animatingField}
+                            displayedValues={displayedValues}
+                          />
+                        </div>
 
-                      <div className="grid grid-cols-12 gap-8 flex-1 overflow-visible">
-                        <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
-                          <SectionTitle title="Contact" minimal={theme === ResumeTheme.MINIMAL} />
-                          <div className={`text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400' : ''}`}>
-                            <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
-                            <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
-                            <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
-                          </div>
-                          <SectionTitle title="Skills" minimal={theme === ResumeTheme.MINIMAL} />
-                          <div className="flex flex-wrap gap-1 mb-8">
-                            <EditableText
-                              fieldKey="skills"
-                              value={resume.skills.join(', ')}
-                              onChange={(v) => onUpdateResume('skills', v.split(',').map(s => s.trim()).filter(s => s !== ''))}
-                              className={`text-[10px] font-bold tracking-tight w-full ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-normal' : 'text-gray-700'}`}
-                              isEditing={isEditing}
-                              animatingField={animatingField}
-                              displayedValues={displayedValues}
-                            />
-                          </div>
-                          <SectionTitle title="Education" minimal={theme === ResumeTheme.MINIMAL} />
-                          {resume.education.map(ed => (
-                            <div key={ed.id} className="mb-4">
+                        <div className="grid grid-cols-12 gap-8 flex-1 overflow-visible">
+                          <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
+                            <SectionTitle title="Contact" minimal={theme === ResumeTheme.MINIMAL} />
+                            <div className={`text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400' : ''}`}>
+                              <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
+                              <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
+                              <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
+                            </div>
+                            <SectionTitle title="Skills" minimal={theme === ResumeTheme.MINIMAL} />
+                            <div className="flex flex-wrap gap-1 mb-8">
                               <EditableText
-                                fieldKey={`ed-degree-${ed.id}`}
-                                value={ed.degree}
-                                onChange={(v) => onUpdateEducation(ed.id, 'degree', v)}
-                                className={`text-[11px] font-bold tracking-tight ${theme === ResumeTheme.MINIMAL ? 'font-normal' : ''}`}
+                                fieldKey="skills"
+                                value={resume.skills.join(', ')}
+                                onChange={(v) => onUpdateResume('skills', v.split(',').map(s => s.trim()).filter(s => s !== ''))}
+                                className={`text-[10px] font-bold tracking-tight w-full ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-normal' : 'text-gray-700'}`}
                                 isEditing={isEditing}
                                 animatingField={animatingField}
                                 displayedValues={displayedValues}
                               />
-                              <div className="flex items-center gap-1">
-                                <EditableText
-                                  fieldKey={`ed-school-${ed.id}`}
-                                  value={ed.school}
-                                  onChange={(v) => onUpdateEducation(ed.id, 'school', v)}
-                                  className="text-[10px] text-gray-500 italic"
-                                  isEditing={isEditing}
-                                  animatingField={animatingField}
-                                  displayedValues={displayedValues}
-                                />
-                                <span className="text-[10px] text-gray-500">•</span>
-                                <EditableText
-                                  fieldKey={`ed-year-${ed.id}`}
-                                  value={ed.year}
-                                  onChange={(v) => onUpdateEducation(ed.id, 'year', v)}
-                                  className="text-[10px] text-gray-500 italic"
-                                  isEditing={isEditing}
-                                  animatingField={animatingField}
-                                  displayedValues={displayedValues}
-                                />
-                              </div>
                             </div>
-                          ))}
-                        </div>
-                        <div className="col-span-8 overflow-visible">
-                          <SectionTitle title="Executive Summary" minimal={theme === ResumeTheme.MINIMAL} />
-                          <div className="mb-8">
-                            <EditableText
-                              fieldKey="summary"
-                              value={resume.summary}
-                              onChange={(v) => onUpdateResume('summary', v)}
-                              className={`text-[11px] leading-relaxed font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-500 font-normal' : 'text-gray-700'}`}
-                              multiline
-                              isEditing={isEditing}
-                              animatingField={animatingField}
-                              displayedValues={displayedValues}
-                              isActiveSuggestion={isFieldActiveSuggestion('summary')}
-                            />
-                          </div>
-                          <SectionTitle title="Experience" minimal={theme === ResumeTheme.MINIMAL} />
-                          <div className="space-y-6">
-                            {pageExperiences.map(exp => (
-                              <div key={exp.id} className="group">
-                                <div className="flex justify-between items-baseline mb-1">
+                            <SectionTitle title="Education" minimal={theme === ResumeTheme.MINIMAL} />
+                            {resume.education.map(ed => (
+                              <div key={ed.id} className="mb-4">
+                                <EditableText
+                                  fieldKey={`ed-degree-${ed.id}`}
+                                  value={ed.degree}
+                                  onChange={(v) => onUpdateEducation(ed.id, 'degree', v)}
+                                  className={`text-[11px] font-bold tracking-tight ${theme === ResumeTheme.MINIMAL ? 'font-normal' : ''}`}
+                                  isEditing={isEditing}
+                                  animatingField={animatingField}
+                                  displayedValues={displayedValues}
+                                />
+                                <div className="flex items-center gap-1">
                                   <EditableText
-                                    fieldKey={`exp-title-${exp.id}`}
-                                    value={exp.title}
-                                    onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
-                                    className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
+                                    fieldKey={`ed-school-${ed.id}`}
+                                    value={ed.school}
+                                    onChange={(v) => onUpdateEducation(ed.id, 'school', v)}
+                                    className="text-[10px] text-gray-500 italic"
                                     isEditing={isEditing}
                                     animatingField={animatingField}
                                     displayedValues={displayedValues}
-                                    isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
                                   />
+                                  <span className="text-[10px] text-gray-500">•</span>
                                   <EditableText
-                                    fieldKey={`exp-period-${exp.id}`}
-                                    value={exp.period}
-                                    onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
-                                    className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
+                                    fieldKey={`ed-year-${ed.id}`}
+                                    value={ed.year}
+                                    onChange={(v) => onUpdateEducation(ed.id, 'year', v)}
+                                    className="text-[10px] text-gray-500 italic"
                                     isEditing={isEditing}
                                     animatingField={animatingField}
                                     displayedValues={displayedValues}
-                                    isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
                                   />
                                 </div>
-                                <EditableText
-                                  fieldKey={`exp-company-${exp.id}`}
-                                  value={exp.company}
-                                  onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
-                                  className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
-                                  isEditing={isEditing}
-                                  animatingField={animatingField}
-                                  displayedValues={displayedValues}
-                                  isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
-                                />
-                                <EditableText
-                                  fieldKey={`exp-desc-${exp.id}`}
-                                  value={exp.description}
-                                  onChange={(v) => onUpdateExperience(exp.id, 'description', v)}
-                                  className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
-                                  multiline
-                                  isEditing={isEditing}
-                                  animatingField={animatingField}
-                                  displayedValues={displayedValues}
-                                  isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
-                                />
                               </div>
                             ))}
                           </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-8 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-                        <span>{resume.name} • Experience Continued</span>
-                      </div>
-                      <div className="space-y-8">
-                        {pageExperiences.map(exp => (
-                          <div key={exp.id} className="group">
-                            <div className="flex justify-between items-baseline mb-1">
+                          <div className="col-span-8 overflow-visible">
+                            <SectionTitle title="Executive Summary" minimal={theme === ResumeTheme.MINIMAL} />
+                            <div className="mb-8">
                               <EditableText
-                                fieldKey={`exp-title-${exp.id}`}
-                                value={exp.title}
-                                onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
-                                className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
+                                fieldKey="summary"
+                                value={resume.summary}
+                                onChange={(v) => onUpdateResume('summary', v)}
+                                className={`text-[11px] leading-relaxed font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-500 font-normal' : 'text-gray-700'}`}
+                                multiline
                                 isEditing={isEditing}
                                 animatingField={animatingField}
                                 displayedValues={displayedValues}
-                                isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
-                              />
-                              <EditableText
-                                fieldKey={`exp-period-${exp.id}`}
-                                value={exp.period}
-                                onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
-                                className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
-                                isEditing={isEditing}
-                                animatingField={animatingField}
-                                displayedValues={displayedValues}
-                                isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
+                                isActiveSuggestion={isFieldActiveSuggestion('summary')}
                               />
                             </div>
-                            <EditableText
-                              fieldKey={`exp-company-${exp.id}`}
-                              value={exp.company}
-                              onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
-                              className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
-                              isEditing={isEditing}
-                              animatingField={animatingField}
-                              displayedValues={displayedValues}
-                              isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
-                            />
-                            <EditableText
-                              fieldKey={`exp-desc-${exp.id}`}
-                              value={exp.description}
-                              onChange={(v) => onUpdateExperience(exp.id, 'description', v)}
-                              className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
-                              multiline
-                              isEditing={isEditing}
-                              animatingField={animatingField}
-                              displayedValues={displayedValues}
-                              isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
-                            />
+                            <SectionTitle title="Experience" minimal={theme === ResumeTheme.MINIMAL} />
+                            <div className="space-y-6">
+                              {pageExperiences.map(exp => (
+                                <div key={exp.id} className="group">
+                                  <div className="flex justify-between items-baseline mb-1">
+                                    <EditableText
+                                      fieldKey={`exp-title-${exp.id}`}
+                                      value={exp.title}
+                                      onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
+                                      className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
+                                      isEditing={isEditing}
+                                      animatingField={animatingField}
+                                      displayedValues={displayedValues}
+                                      isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
+                                    />
+                                    <EditableText
+                                      fieldKey={`exp-period-${exp.id}`}
+                                      value={exp.period}
+                                      onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
+                                      className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
+                                      isEditing={isEditing}
+                                      animatingField={animatingField}
+                                      displayedValues={displayedValues}
+                                      isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
+                                    />
+                                  </div>
+                                  <EditableText
+                                    fieldKey={`exp-company-${exp.id}`}
+                                    value={exp.company}
+                                    onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
+                                    className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
+                                    isEditing={isEditing}
+                                    animatingField={animatingField}
+                                    displayedValues={displayedValues}
+                                    isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
+                                  />
+                                  <EditableText
+                                    fieldKey={`exp-desc-${exp.id}`}
+                                    value={exp.description}
+                                    onChange={(v) => onUpdateExperience(exp.id, 'description', v)}
+                                    className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
+                                    multiline
+                                    isEditing={isEditing}
+                                    animatingField={animatingField}
+                                    displayedValues={displayedValues}
+                                    isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </PaperPage>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-8 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+                          <span>{resume.name} • Experience Continued</span>
+                        </div>
+                        <div className="space-y-8">
+                          {pageExperiences.map(exp => (
+                            <div key={exp.id} className="group">
+                              <div className="flex justify-between items-baseline mb-1">
+                                <EditableText
+                                  fieldKey={`exp-title-${exp.id}`}
+                                  value={exp.title}
+                                  onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
+                                  className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
+                                  isEditing={isEditing}
+                                  animatingField={animatingField}
+                                  displayedValues={displayedValues}
+                                  isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
+                                />
+                                <EditableText
+                                  fieldKey={`exp-period-${exp.id}`}
+                                  value={exp.period}
+                                  onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
+                                  className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
+                                  isEditing={isEditing}
+                                  animatingField={animatingField}
+                                  displayedValues={displayedValues}
+                                  isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
+                                />
+                              </div>
+                              <EditableText
+                                fieldKey={`exp-company-${exp.id}`}
+                                value={exp.company}
+                                onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
+                                className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
+                                isEditing={isEditing}
+                                animatingField={animatingField}
+                                displayedValues={displayedValues}
+                                isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
+                              />
+                              <EditableText
+                                fieldKey={`exp-desc-${exp.id}`}
+                                value={exp.description}
+                                onChange={(v) => onUpdateExperience(exp.id, 'description', v)}
+                                className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
+                                multiline
+                                isEditing={isEditing}
+                                animatingField={animatingField}
+                                displayedValues={displayedValues}
+                                isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </PaperPage>
+              </div>
             ))}
           </>
         ) : (
           <>
             {letterPages.map((pageContent, index) => (
-              <PaperPage key={index} themeClass={themeClass} isShimmering={isAiLoading} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
-                <div className={`h-full flex flex-col p-12`}>
-                  {index === 0 ? (
-                    <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-12 -mt-12 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
-                      <div className={`${theme === LetterTheme.CLASSIC ? 'text-3xl font-serif mb-2' : 'font-black uppercase tracking-tighter text-4xl mb-1'}`}>{resume.name}</div>
-                      <div className={`${theme === LetterTheme.CLASSIC ? 'text-[10px] text-gray-400 italic mb-4' : 'text-[11px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-6'}`}>{resume.role}</div>
-                      <div className={`flex justify-between items-center text-[10px] font-mono font-bold text-gray-400 w-full ${theme === LetterTheme.CLASSIC ? 'flex-col gap-1 italic font-serif' : ''}`}>
-                        <div className={`flex gap-4 ${theme === LetterTheme.CLASSIC ? 'justify-center' : ''}`}>
-                          <span>{resume.location}</span>
-                          {theme === LetterTheme.CLASSIC && <span>•</span>}
-                          <span>{resume.email}</span>
-                          {theme === LetterTheme.CLASSIC && <span>•</span>}
-                          {theme === LetterTheme.CLASSIC && <span>{resume.phone}</span>}
-                        </div>
-                        <div className={theme === LetterTheme.CLASSIC ? 'mt-4 text-gray-900 not-italic font-sans font-bold uppercase tracking-widest' : ''}>
-                          {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              <div key={index} className="print-page-wrapper">
+                <PaperPage themeClass={themeClass} isShimmering={isAiLoading} className={index > 0 ? "animate-in fade-in slide-in-from-top-4 duration-700" : ""}>
+                  <div className={`h-full flex flex-col p-12`}>
+                    {index === 0 ? (
+                      <div className={`flex flex-col mb-12 ${theme === LetterTheme.BOLD ? 'bg-[#1a1a1a] text-white p-12 -mx-12 -mt-12 mb-16 shadow-2xl relative border-b-2 border-black/10 pb-8' : theme === LetterTheme.CLASSIC ? 'items-center text-center border-b border-gray-200 pb-10' : 'border-b-2 border-black/10 pb-8'}`}>
+                        <div className={`${theme === LetterTheme.CLASSIC ? 'text-3xl font-serif mb-2' : 'font-black uppercase tracking-tighter text-4xl mb-1'}`}>{resume.name}</div>
+                        <div className={`${theme === LetterTheme.CLASSIC ? 'text-[10px] text-gray-400 italic mb-4' : 'text-[11px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-6'}`}>{resume.role}</div>
+                        <div className={`flex justify-between items-center text-[10px] font-mono font-bold text-gray-400 w-full ${theme === LetterTheme.CLASSIC ? 'flex-col gap-1 italic font-serif' : ''}`}>
+                          <div className={`flex gap-4 ${theme === LetterTheme.CLASSIC ? 'justify-center' : ''}`}>
+                            <span>{resume.location}</span>
+                            {theme === LetterTheme.CLASSIC && <span>•</span>}
+                            <span>{resume.email}</span>
+                            {theme === LetterTheme.CLASSIC && <span>•</span>}
+                            {theme === LetterTheme.CLASSIC && <span>{resume.phone}</span>}
+                          </div>
+                          <div className={theme === LetterTheme.CLASSIC ? 'mt-4 text-gray-900 not-italic font-sans font-bold uppercase tracking-widest' : ''}>
+                            {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-10 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-                      <span>{resume.name} • Cover Letter</span>
-                    </div>
-                  )}
-
-                  <div className="space-y-8 flex-1 overflow-hidden">
-                    {index === 0 && <div className="text-sm font-black text-black uppercase tracking-widest py-1">Dear Hiring Manager,</div>}
-
-                    {index === 0 ? (
-                      <EditableText
-                        fieldKey="coverLetter"
-                        value={coverLetter}
-                        onChange={(v) => onUpdateCoverLetter(v)}
-                        className="text-sm leading-[1.9] text-gray-800 text-justify font-medium"
-                        multiline
-                        isEditing={isEditing}
-                        animatingField={animatingField}
-                        displayedValues={displayedValues}
-                      />
                     ) : (
-                      <div className="text-sm leading-[1.9] text-gray-800 text-justify font-medium whitespace-pre-wrap">
-                        {pageContent}
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-10 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+                        <span>{resume.name} • Cover Letter</span>
                       </div>
                     )}
-                  </div>
 
-                  {index === letterPages.length - 1 && <ClosingBlock resume={resume} theme={theme} />}
-                </div>
-              </PaperPage>
+                    <div className="space-y-8 flex-1 overflow-hidden">
+                      {index === 0 && <div className="text-sm font-black text-black uppercase tracking-widest py-1">Dear Hiring Manager,</div>}
+
+                      {index === 0 ? (
+                        <EditableText
+                          fieldKey="coverLetter"
+                          value={coverLetter}
+                          onChange={(v) => onUpdateCoverLetter(v)}
+                          className="text-sm leading-[1.9] text-gray-800 text-justify font-medium"
+                          multiline
+                          isEditing={isEditing}
+                          animatingField={animatingField}
+                          displayedValues={displayedValues}
+                        />
+                      ) : (
+                        <div className="text-sm leading-[1.9] text-gray-800 text-justify font-medium whitespace-pre-wrap">
+                          {pageContent}
+                        </div>
+                      )}
+                    </div>
+
+                    {index === letterPages.length - 1 && <ClosingBlock resume={resume} theme={theme} />}
+                  </div>
+                </PaperPage>
+              </div>
             ))}
           </>
         )}
