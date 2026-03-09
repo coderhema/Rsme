@@ -12,6 +12,7 @@ export interface ResumeData {
   experience: ExperienceItem[];
   skills: string[];
   education: EducationItem[];
+  certificates: string[];
 }
 
 export interface ExperienceItem {

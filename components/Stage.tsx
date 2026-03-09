@@ -159,6 +159,16 @@ const Stage: React.FC<StageProps> = ({
   const [displayedValues, setDisplayedValues] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isOver, setIsOver] = useState(false);
+  const [sectionTitles, setSectionTitles] = useState({
+    contact: 'Contact',
+    skills: 'Skills',
+    education: 'Education',
+    summary: 'Executive Summary',
+    experience: 'Experience',
+    certificates: 'Certificates',
+  });
+  const updateSectionTitle = (key: keyof typeof sectionTitles, v: string) =>
+    setSectionTitles(prev => ({ ...prev, [key]: v }));
 
   const suggestionsToShow = useMemo(() => {
     if (activeSuggestion) return [activeSuggestion];
@@ -776,13 +786,13 @@ const Stage: React.FC<StageProps> = ({
 
                         <div className="grid grid-cols-12 gap-8 flex-1 overflow-visible">
                           <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
-                            <SectionTitle title="Contact" minimal={theme === ResumeTheme.MINIMAL} />
+                            <SectionTitle title={sectionTitles.contact} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('contact', v)} />
                             <div className={`text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400' : ''}`}>
                               <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                               <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                               <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
                             </div>
-                            <SectionTitle title="Skills" minimal={theme === ResumeTheme.MINIMAL} />
+                            <SectionTitle title={sectionTitles.skills} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('skills', v)} />
                             <div className="flex flex-wrap gap-1 mb-8">
                               <EditableText
                                 fieldKey="skills"
@@ -794,7 +804,7 @@ const Stage: React.FC<StageProps> = ({
                                 displayedValues={displayedValues}
                               />
                             </div>
-                            <SectionTitle title="Education" minimal={theme === ResumeTheme.MINIMAL} />
+                            <SectionTitle title={sectionTitles.education} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('education', v)} />
                             {resume.education.map(ed => (
                               <div key={ed.id} className="mb-4">
                                 <EditableText
@@ -831,7 +841,7 @@ const Stage: React.FC<StageProps> = ({
                             ))}
                           </div>
                           <div className="col-span-8 overflow-visible">
-                            <SectionTitle title="Executive Summary" minimal={theme === ResumeTheme.MINIMAL} />
+                            <SectionTitle title={sectionTitles.summary} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('summary', v)} />
                             <div className="mb-8">
                               <EditableText
                                 fieldKey="summary"
@@ -845,7 +855,7 @@ const Stage: React.FC<StageProps> = ({
                                 isActiveSuggestion={isFieldActiveSuggestion('summary')}
                               />
                             </div>
-                            <SectionTitle title="Experience" minimal={theme === ResumeTheme.MINIMAL} />
+                            <SectionTitle title={sectionTitles.experience} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('experience', v)} />
                             <div className="space-y-6">
                               {pageExperiences.map(exp => (
                                 <div key={exp.id} className="group">
@@ -900,57 +910,77 @@ const Stage: React.FC<StageProps> = ({
                       </>
                     ) : (
                       <>
-                        <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-8 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-                          <span>{resume.name} • Experience Continued</span>
-                        </div>
-                        <div className="space-y-8">
-                          {pageExperiences.map(exp => (
-                            <div key={exp.id} className="group">
-                              <div className="flex justify-between items-baseline mb-1">
-                                <EditableText
-                                  fieldKey={`exp-title-${exp.id}`}
-                                  value={exp.title}
-                                  onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
-                                  className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
-                                  isEditing={isEditing}
-                                  animatingField={animatingField}
-                                  displayedValues={displayedValues}
-                                  isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
-                                />
-                                <EditableText
-                                  fieldKey={`exp-period-${exp.id}`}
-                                  value={exp.period}
-                                  onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
-                                  className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
-                                  isEditing={isEditing}
-                                  animatingField={animatingField}
-                                  displayedValues={displayedValues}
-                                  isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
-                                />
-                              </div>
-                              <EditableText
-                                fieldKey={`exp-company-${exp.id}`}
-                                value={exp.company}
-                                onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
-                                className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
-                                isEditing={isEditing}
-                                animatingField={animatingField}
-                                displayedValues={displayedValues}
-                                isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
-                              />
-                              <EditableText
-                                fieldKey={`exp-desc-${exp.id}`}
-                                value={exp.description}
-                                onChange={(v) => onUpdateExperience(exp.id, 'description', v)}
-                                className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
-                                multiline
-                                isEditing={isEditing}
-                                animatingField={animatingField}
-                                displayedValues={displayedValues}
-                                isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
-                              />
+                        {/* Two-column layout — left sidebar unique to this continuation page */}
+                        <div className="grid grid-cols-12 gap-8 flex-1 overflow-visible">
+
+                          {/* Left sidebar — Certificates section, unique to this continuation page */}
+                          <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
+                            <SectionTitle title={sectionTitles.certificates} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('certificates', v)} />
+                            <EditableText
+                              fieldKey="certificates"
+                              value={(resume.certificates ?? []).join('\n')}
+                              onChange={(v) => onUpdateResume('certificates', v.split('\n').map(s => s.trim()).filter(s => s !== ''))}
+                              className={`text-[11px] leading-relaxed font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-normal' : 'text-gray-600'}`}
+                              multiline
+                              isEditing={isEditing}
+                              animatingField={animatingField}
+                              displayedValues={displayedValues}
+                            />
+                          </div>
+
+                          {/* Right column — continuation experiences */}
+                          <div className="col-span-8 overflow-visible">
+                            <SectionTitle title={`${sectionTitles.experience} (Continued)`} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('experience', v.replace(' (Continued)', ''))} />
+                            <div className="space-y-6">
+                              {pageExperiences.map(exp => (
+                                <div key={exp.id} className="group">
+                                  <div className="flex justify-between items-baseline mb-1">
+                                    <EditableText
+                                      fieldKey={`exp-title-${exp.id}`}
+                                      value={exp.title}
+                                      onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
+                                      className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
+                                      isEditing={isEditing}
+                                      animatingField={animatingField}
+                                      displayedValues={displayedValues}
+                                      isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
+                                    />
+                                    <EditableText
+                                      fieldKey={`exp-period-${exp.id}`}
+                                      value={exp.period}
+                                      onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
+                                      className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
+                                      isEditing={isEditing}
+                                      animatingField={animatingField}
+                                      displayedValues={displayedValues}
+                                      isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
+                                    />
+                                  </div>
+                                  <EditableText
+                                    fieldKey={`exp-company-${exp.id}`}
+                                    value={exp.company}
+                                    onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
+                                    className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
+                                    isEditing={isEditing}
+                                    animatingField={animatingField}
+                                    displayedValues={displayedValues}
+                                    isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
+                                  />
+                                  <EditableText
+                                    fieldKey={`exp-desc-${exp.id}`}
+                                    value={exp.description}
+                                    onChange={(v) => onUpdateExperience(exp.id, 'description', v)}
+                                    className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
+                                    multiline
+                                    isEditing={isEditing}
+                                    animatingField={animatingField}
+                                    displayedValues={displayedValues}
+                                    isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
+                                  />
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
                         </div>
                       </>
                     )}
@@ -1054,10 +1084,18 @@ const Stage: React.FC<StageProps> = ({
   );
 };
 
-const SectionTitle: React.FC<{ title: string, minimal?: boolean }> = ({ title, minimal }) => (
-  <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${minimal ? 'text-gray-400 border-none pb-0 mb-2' : 'border-b-2 border-black/10 pb-1 text-black/80'}`}>
-    {title}
-  </div>
+const SectionTitle: React.FC<{ title: string, minimal?: boolean, isEditing?: boolean, onChange?: (v: string) => void }> = ({ title, minimal, isEditing, onChange }) => (
+  isEditing && onChange ? (
+    <input
+      value={title}
+      onChange={(e) => onChange(e.target.value)}
+      className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 w-full bg-transparent focus:outline-none border-b-2 cursor-text transition-colors hover:bg-black/5 px-1 -mx-1 rounded ${minimal ? 'text-gray-400 border-transparent focus:border-gray-300 mb-2' : 'border-black/10 focus:border-violet-400/50 text-black/80'}`}
+    />
+  ) : (
+    <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${minimal ? 'text-gray-400 border-none pb-0 mb-2' : 'border-b-2 border-black/10 pb-1 text-black/80'}`}>
+      {title}
+    </div>
+  )
 );
 
 const SuggestionLine: React.FC<{ activeSuggestion: AISuggestion, boxPos: { x: number, y: number } }> = ({ activeSuggestion, boxPos }) => {
