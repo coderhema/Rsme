@@ -145,7 +145,7 @@ const Stage: React.FC<StageProps> = ({
     zoomValue.set(zoom);
   }, [zoom]);
   const smoothZoom = useSpring(zoomValue, { stiffness: 300, damping: 30 });
-  const suggestionScale = useTransform(smoothZoom as any, [0.5, 1, 2], [1.2, 1, 0.9]);
+  const suggestionScale = useTransform(smoothZoom as any, [0.5, 1, 2], [0.9, 0.9, 0.9]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -207,7 +207,7 @@ const Stage: React.FC<StageProps> = ({
       // Structure the extracted text using AI
       const parsed = await parseResume(extractedText);
       if (parsed) onUploadResume(parsed);
-      
+
       setIsAiLoading(false);
       setIsUploading(false);
     } catch (error) {
@@ -466,7 +466,7 @@ const Stage: React.FC<StageProps> = ({
 
   return (
     <div
-      className={`flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth transition-colors duration-300 ${isOver ? 'bg-violet-400/5' : ''}`}
+      className={`flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth transition-colors duration-300 ${isOver ? 'bg-violet-400/5' : ''} print:bg-white print:overflow-visible print:p-0 print:block`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -483,11 +483,11 @@ const Stage: React.FC<StageProps> = ({
           >
             {/* Animated glowing border */}
             <div className="absolute inset-0 border-[3px] border-transparent rounded-[40px] bg-[conic-gradient(from_0deg,var(--color-violet-400),white,var(--color-violet-400))] animate-[spin_4s_linear_infinite] [mask-image:linear-gradient(white,white)] [mask-clip:content-box,border-box] p-[3px] opacity-70">
-                <div className="w-full h-full bg-black/40 rounded-[37px] backdrop-blur-3xl" />
+              <div className="w-full h-full bg-black/40 rounded-[37px] backdrop-blur-3xl" />
             </div>
-            
+
             <div className="relative z-10 flex flex-col items-center">
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                 className="w-24 h-24 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center shadow-[0_0_80px_rgba(0,68,221,0.5)] mb-8 rotate-12 relative overflow-hidden"
@@ -500,9 +500,9 @@ const Stage: React.FC<StageProps> = ({
               </div>
               <div className="flex gap-3">
                 {['PDF', 'DOCX', 'TXT'].map((ext) => (
-                    <div key={ext} className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-[10px] font-mono font-bold uppercase tracking-widest backdrop-blur-sm">
-                        {ext}
-                    </div>
+                  <div key={ext} className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-[10px] font-mono font-bold uppercase tracking-widest backdrop-blur-sm">
+                    {ext}
+                  </div>
                 ))}
               </div>
             </div>
@@ -510,37 +510,10 @@ const Stage: React.FC<StageProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Uploading Status Indicator */}
-      <AnimatePresence>
-        {isUploading && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 z-[100] bg-black/80 backdrop-blur-xl border border-violet-400/30 rounded-2xl p-4 flex items-center gap-4 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(0,68,221,0.2)]"
-          >
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 border-[3px] border-violet-400/20 rounded-full"></div>
-              <div className="absolute inset-0 border-[3px] border-violet-400 rounded-full border-t-transparent animate-[spin_1s_cubic-bezier(0.68,-0.55,0.265,1.55)_infinite]"></div>
-              <div className="w-2 h-2 bg-violet-400 rounded-full animate-pulse blur-[1px]"></div>
-            </div>
-            <div className="flex flex-col pr-2">
-              <div className="text-white font-black text-[11px] uppercase tracking-[0.15em] mb-0.5 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Uploading & Magic...</div>
-              <div className="text-violet-400/80 text-[8px] font-mono uppercase tracking-widest flex items-center gap-1.5">
-                Processing Content
-                <span className="flex gap-0.5">
-                  <span className="w-1 h-1 bg-violet-400/80 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                  <span className="w-1 h-1 bg-violet-400/80 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                  <span className="w-1 h-1 bg-violet-400/80 rounded-full animate-bounce"></span>
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* Zoom Control */}
-      <div className="fixed right-12 top-1/2 -translate-y-1/2 flex items-center gap-6 h-[400px] z-40 group/zoom">
+      <div className="fixed right-12 top-1/2 -translate-y-1/2 flex items-center gap-6 h-[400px] z-40 group/zoom print:hidden">
         <div className="flex flex-col justify-between h-full text-[10px] font-mono font-black select-none pr-2 text-right transition-colors">
           <span className={`transition-all duration-300 ${zoom >= 1.75 ? 'text-violet-400 scale-110' : 'text-gray-600'}`}>200%</span>
           <span className={`transition-all duration-300 ${zoom > 0.85 && zoom < 1.15 ? 'text-violet-400 scale-110' : 'text-gray-600'}`}>100%</span>
@@ -689,7 +662,7 @@ const Stage: React.FC<StageProps> = ({
               animate={{ opacity: 1, y: 0 }}
               style={{ scale: suggestionScale }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-[20%] left-[50%] -ml-[300px] w-[600px] max-w-[90vw] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
+              className="fixed top-[20%] left-[50%] -ml-[240px] w-[480px] max-w-[90vw] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
             >
               <div className="bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer text-black px-4 py-2.5 font-black text-[9px] tracking-[0.2em] flex justify-between items-center rounded-t-xl">
                 <div className="flex items-center gap-2">
@@ -923,7 +896,6 @@ const Stage: React.FC<StageProps> = ({
                     <>
                       <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-8 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
                         <span>{resume.name} • Experience Continued</span>
-                        <span>Page {index + 1}</span>
                       </div>
                       <div className="space-y-8">
                         {pageExperiences.map(exp => (
@@ -1005,7 +977,6 @@ const Stage: React.FC<StageProps> = ({
                   ) : (
                     <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-10 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
                       <span>{resume.name} • Cover Letter</span>
-                      <span>Page {index + 1}</span>
                     </div>
                   )}
 
@@ -1039,7 +1010,7 @@ const Stage: React.FC<StageProps> = ({
       </motion.div>
 
       {/* Reimagined Action Pill */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1A1A1A] px-3 py-3 rounded-full flex gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.6)] items-center z-30 border border-white/5">
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1A1A1A] px-3 py-3 rounded-full flex gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.6)] items-center z-30 border border-white/5 print:hidden">
         <button
           onClick={() => setIsEditing(!isEditing)}
           className={`flex items-center gap-2 px-6 py-3 text-[11px] font-bold rounded-full transition-all tracking-wide ${isEditing ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'bg-[#0044DD] text-white shadow-[0_0_20px_rgba(0,68,221,0.3)] hover:bg-[#0033aa]'}`}
@@ -1051,6 +1022,7 @@ const Stage: React.FC<StageProps> = ({
         </button>
 
         <button
+          onClick={() => window.print()}
           className="flex items-center gap-2 px-6 py-3 text-[11px] font-bold rounded-full transition-all border tracking-wide bg-transparent text-white border-white/20 hover:bg-white/5"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

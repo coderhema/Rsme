@@ -6,35 +6,35 @@ import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
 
 const INITIAL_RESUME: ResumeData = {
-  name: "Alex Morgan",
-  role: "Senior Product Designer",
-  email: "alex.morgan@design.io",
-  phone: "+1 415 555 0192",
-  location: "San Francisco, CA",
-  summary: "Results-driven Product Designer with 6+ years of experience in fintech and SaaS. Expertise in design systems, high-fidelity prototyping, and user-centered methodologies.",
+  name: "Fullname Here",
+  role: "Your Job Title",
+  email: "name@email.com",
+  phone: "+1 234 555 0192",
+  location: "City, State",
+  summary: "A brief summary of your professional background, key skills, and career goals. Focus on your expertise and what you bring to the table.",
   experience: [
     {
       id: '1',
-      title: "Senior Designer",
-      company: "Creative Studio",
-      period: "2020 - Present",
-      description: "Led design system overhaul improving consistency across 4 product lines. Mentored junior designers and managed stakeholder relationships."
+      title: "Role Title",
+      company: "Company Name",
+      period: "Year - Present",
+      description: "Description of your responsibilities and achievements in this role. Highlight the impact you made and the skills you utilized."
     },
     {
       id: '2',
-      title: "UX Designer",
-      company: "TechStart Inc",
-      period: "2018 - 2020",
-      description: "Designed mobile-first experiences for fintech application serving 1M+ users. Focused on onboarding conversion."
+      title: "Previous Role Title",
+      company: "Previous Company",
+      period: "Year - Year",
+      description: "Description of your responsibilities and achievements in your previous role."
     }
   ],
-  skills: ["UI/UX Design", "Design Systems", "Figma", "React", "Prototyping", "User Research"],
+  skills: ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
   education: [
     {
       id: 'ed1',
-      degree: "B.A. Graphic Design",
-      school: "Design Institute of Arts",
-      year: "2018"
+      degree: "Degree Name",
+      school: "University Name",
+      year: "Graduation Year"
     }
   ]
 };

@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 
 const app = express();
@@ -15,6 +15,10 @@ app.use(cors({
 // Configure multer to store uploaded files in memory
 const upload = multer({ storage: multer.memoryStorage() });
 
+app.get('/', (req, res) => {
+  res.json({ status: 'Custom Document Parser API is running properly' });
+});
+
 app.post('/api/parse', upload.single('document'), async (req, res) => {
   try {
     if (!req.file) {
@@ -27,7 +31,8 @@ app.post('/api/parse', upload.single('document'), async (req, res) => {
     console.log(`Parsing file: ${originalname} (${mimetype})`);
 
     if (mimetype === 'application/pdf') {
-      const data = await pdfParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const data = await parser.getText();
       extractedText = data.text;
     } else if (
       mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 

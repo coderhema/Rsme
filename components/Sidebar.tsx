@@ -79,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <motion.div
       initial={false}
       animate={{ width: isCollapsed ? 80 : 360 }}
-      className="bg-[#1E1E1E] border-r border-[#333] flex flex-col z-10 shadow-2xl relative"
+      className="bg-[#1E1E1E] border-r border-[#333] flex flex-col z-10 shadow-2xl relative print:hidden"
     >
       {/* Toggle Button */}
       <Tooltip
