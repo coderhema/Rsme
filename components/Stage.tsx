@@ -481,7 +481,7 @@ const Stage: React.FC<StageProps> = ({
 
   return (
     <div
-      className={`flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth transition-colors duration-300 ${isOver ? 'bg-violet-400/5' : ''} print:bg-white print:overflow-visible print:p-0 print:block`}
+      className={`flex-1 relative dot-grid bg-[#0D0D0D] flex flex-col items-center py-12 overflow-y-auto no-scrollbar scroll-smooth transition-colors duration-300 ${isOver ? 'bg-violet-400/5' : ''} print:bg-white print:overflow-visible print:p-0 print:block print:h-auto`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

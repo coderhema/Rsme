@@ -60,8 +60,14 @@
 
   .print-reset-transform {
     transform: none !important;
+    scale: 1 !important;
+    rotate: none !important;
+    translate: none !important;
     display: block !important;
     gap: 0 !important;
+    width: 210mm !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   /* One A4 page per wrapper — clips its child and forces a page break after */
@@ -73,6 +79,8 @@
     margin: 0 !important;
     padding: 0 !important;
     position: relative !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid;
     page-break-before: auto;
     break-before: auto;
     page-break-after: always;

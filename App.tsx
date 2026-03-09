@@ -163,7 +163,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans">
+    <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans print:h-auto print:overflow-visible print:bg-white print:block">
       <Sidebar 
         mode={mode}
         setMode={setMode}
