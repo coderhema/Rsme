@@ -98,8 +98,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-visible`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} mb-2`}>
           <div className="flex items-center gap-2.5 font-black text-sm tracking-[0.2em] text-white">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0">
-              <img src="/logo.svg" alt="rsme logo" className="w-full h-full object-contain" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0 relative group cursor-pointer">
+              <img src="/logo.svg" alt="rsme logo" className="w-full h-10 object-contain absolute inset-0 transition-opacity duration-300 group-hover:opacity-0" />
+              <div
+                className="w-full h-full absolute inset-0 bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  maskImage: "url('/logo.svg')",
+                  maskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskImage: "url('/logo.svg')",
+                  WebkitMaskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center"
+                }}
+              />
             </div>
           </div>
           {!isCollapsed && (
@@ -428,8 +441,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                               className={`aspect-[3/4] border-2 rounded-lg overflow-hidden transition-all flex flex-col group ${theme === t ? 'border-violet-400 shadow-[0_0_15px_rgba(0,68,221,0.2)]' : 'border-[#333] hover:border-gray-500'}`}
                             >
                               <div className={`flex-1 m-1.5 rounded-sm shadow-sm ${mode === 'RESUME'
-                                  ? (t === ResumeTheme.MODERN ? 'theme-preview-modern' : t === ResumeTheme.MINIMAL ? 'theme-preview-minimal' : 'theme-preview-creative')
-                                  : (t === LetterTheme.BOLD ? 'theme-preview-creative' : t === LetterTheme.MODERN ? 'theme-preview-modern' : 'theme-preview-minimal')
+                                ? (t === ResumeTheme.MODERN ? 'theme-preview-modern' : t === ResumeTheme.MINIMAL ? 'theme-preview-minimal' : 'theme-preview-creative')
+                                : (t === LetterTheme.BOLD ? 'theme-preview-creative' : t === LetterTheme.MODERN ? 'theme-preview-modern' : 'theme-preview-minimal')
                                 } bg-white opacity-90 group-hover:opacity-100 transition-opacity`}></div>
                               <div className={`text-[8px] pb-1.5 text-center font-bold tracking-tighter truncate px-1 uppercase ${theme === t ? 'text-violet-400' : 'text-gray-500 group-hover:text-gray-300'}`}>{t}</div>
                             </button>

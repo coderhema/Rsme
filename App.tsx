@@ -206,6 +206,9 @@ const App: React.FC = () => {
         onCloseRoast={() => setRoast(null)}
         isAiLoading={isAiLoading}
         setIsAiLoading={setIsAiLoading}
+        suggestions={suggestions}
+        selectedSuggestionIds={selectedSuggestionIds}
+        onDeselectSuggestion={(id) => setSelectedSuggestionIds(prev => prev.filter(i => i !== id))}
       />
     </div>
   );

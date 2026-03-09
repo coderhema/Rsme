@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
 import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus } from 'iconoir-react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
-import mammoth from 'mammoth';
 import { parseResume } from '../services/geminiService';
 
 interface StageProps {
@@ -11,6 +10,9 @@ interface StageProps {
   mode: AppMode;
   theme: ResumeTheme | LetterTheme;
   activeSuggestion: AISuggestion | null;
+  suggestions?: AISuggestion[];
+  selectedSuggestionIds?: string[];
+  onDeselectSuggestion?: (id: string) => void;
   onCloseSuggestion: () => void;
   onApplySuggestion: (s: AISuggestion) => void;
   onUpdateResume: (field: keyof ResumeData, value: any) => void;
@@ -134,7 +136,7 @@ const ClosingBlock: React.FC<{ resume: ResumeData, theme: ResumeTheme | LetterTh
 );
 
 const Stage: React.FC<StageProps> = ({
-  resume, coverLetter, mode, theme, activeSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
+  resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
   onRoast, onUploadResume, roast, onCloseRoast, isAiLoading, setIsAiLoading
 }) => {
   const [zoom, setZoom] = useState<number>(0.85);
@@ -152,6 +154,14 @@ const Stage: React.FC<StageProps> = ({
   const [displayedValues, setDisplayedValues] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isOver, setIsOver] = useState(false);
+
+  const suggestionsToShow = useMemo(() => {
+    if (activeSuggestion) return [activeSuggestion];
+    if (selectedSuggestionIds.length > 0) {
+      return suggestions.filter(s => selectedSuggestionIds.includes(s.id));
+    }
+    return [];
+  }, [activeSuggestion, selectedSuggestionIds, suggestions]);
 
   const [suggestionBoxPos, setSuggestionBoxPos] = useState({ x: 0, y: 0 });
   const suggestionRef = useRef<HTMLDivElement>(null);
@@ -174,37 +184,35 @@ const Stage: React.FC<StageProps> = ({
     setIsUploading(true);
     setIsAiLoading(true);
     try {
-      if (file.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const base64 = (reader.result as string).split(',')[1];
-          const parsed = await parseResume({ data: base64, mimeType: 'application/pdf' });
-          if (parsed) onUploadResume(parsed);
-          setIsAiLoading(false);
-          setIsUploading(false);
-        };
-        reader.readAsDataURL(file);
-      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        const text = result.value;
-        const parsed = await parseResume(text);
-        if (parsed) onUploadResume(parsed);
-        setIsAiLoading(false);
-        setIsUploading(false);
-      } else if (file.type === 'text/plain') {
-        const text = await file.text();
-        const parsed = await parseResume(text);
-        if (parsed) onUploadResume(parsed);
-        setIsAiLoading(false);
-        setIsUploading(false);
-      } else {
-        alert("Unsupported file type. Please upload PDF, Word, or Text files.");
-        setIsAiLoading(false);
-        setIsUploading(false);
+      const formData = new FormData();
+      formData.append('document', file);
+
+      // Send the file to our custom backend parsing API
+      const response = await fetch('http://localhost:3001/api/parse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to parse document on server');
       }
+
+      const data = await response.json();
+      const extractedText = data.text;
+
+      if (!extractedText) {
+        throw new Error('No text could be extracted from this document');
+      }
+
+      // Structure the extracted text using AI
+      const parsed = await parseResume(extractedText);
+      if (parsed) onUploadResume(parsed);
+      
+      setIsAiLoading(false);
+      setIsUploading(false);
     } catch (error) {
       console.error("File processing error:", error);
+      alert("Failed to process document. Please try again.");
       setIsAiLoading(false);
       setIsUploading(false);
     }
@@ -212,7 +220,7 @@ const Stage: React.FC<StageProps> = ({
 
   useEffect(() => {
     const updatePos = () => {
-      if (activeSuggestion && suggestionRef.current) {
+      if (suggestionsToShow.length > 0 && suggestionRef.current) {
         const rect = suggestionRef.current.getBoundingClientRect();
         setSuggestionBoxPos({
           x: rect.left + rect.width / 2,
@@ -224,7 +232,7 @@ const Stage: React.FC<StageProps> = ({
     updatePos();
     const interval = setInterval(updatePos, 50); // Poll for scale/position changes
     return () => clearInterval(interval);
-  }, [activeSuggestion, zoom]);
+  }, [suggestionsToShow, zoom]);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -314,13 +322,14 @@ const Stage: React.FC<StageProps> = ({
   };
 
   const isFieldActiveSuggestion = useCallback((fieldKey: string) => {
-    if (!activeSuggestion) return false;
-    let targetId = activeSuggestion.field;
-    if (targetId.startsWith('experience:')) {
-      targetId = `exp-desc-${targetId.split(':')[1]}`;
-    }
-    return targetId === fieldKey;
-  }, [activeSuggestion]);
+    return suggestionsToShow.some(s => {
+      let targetId = s.field;
+      if (targetId.startsWith('experience:')) {
+        targetId = `exp-desc-${targetId.split(':')[1]}`;
+      }
+      return targetId === fieldKey;
+    });
+  }, [suggestionsToShow]);
 
   const handleApplySuggestion = (s: AISuggestion) => {
     let fieldKey = s.field;
@@ -470,13 +479,33 @@ const Stage: React.FC<StageProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-12 z-50 border-4 border-dashed border-violet-400/40 rounded-3xl flex flex-col items-center justify-center bg-violet-400/5 pointer-events-none"
+            className="fixed inset-12 z-50 rounded-[40px] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md pointer-events-none overflow-hidden"
           >
-            <div className="w-20 h-20 bg-violet-400 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(0,68,221,0.3)] mb-6">
-              <Plus width={40} height={40} className="text-black" />
+            {/* Animated glowing border */}
+            <div className="absolute inset-0 border-[3px] border-transparent rounded-[40px] bg-[conic-gradient(from_0deg,var(--color-violet-400),white,var(--color-violet-400))] animate-[spin_4s_linear_infinite] [mask-image:linear-gradient(white,white)] [mask-clip:content-box,border-box] p-[3px] opacity-70">
+                <div className="w-full h-full bg-black/40 rounded-[37px] backdrop-blur-3xl" />
             </div>
-            <div className="text-violet-400 font-black text-2xl uppercase tracking-[0.2em]">Drop to Import</div>
-            <div className="text-violet-400/60 text-xs font-mono mt-2 uppercase tracking-widest">PDF, DOCX, or TXT</div>
+            
+            <div className="relative z-10 flex flex-col items-center">
+              <motion.div 
+                animate={{ y: [0, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                className="w-24 h-24 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center shadow-[0_0_80px_rgba(0,68,221,0.5)] mb-8 rotate-12 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 blur-xl mix-blend-overlay"></div>
+                <Plus width={48} height={48} className="text-white drop-shadow-lg" />
+              </motion.div>
+              <div className="text-transparent bg-clip-text bg-gradient-to-r from-violet-200 to-white font-black text-4xl uppercase tracking-[0.3em] drop-shadow-lg mb-3">
+                Drop to Import
+              </div>
+              <div className="flex gap-3">
+                {['PDF', 'DOCX', 'TXT'].map((ext) => (
+                    <div key={ext} className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-[10px] font-mono font-bold uppercase tracking-widest backdrop-blur-sm">
+                        {ext}
+                    </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -485,18 +514,26 @@ const Stage: React.FC<StageProps> = ({
       <AnimatePresence>
         {isUploading && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-8 right-8 z-[100] bg-[#1A1A1A] border border-violet-400/20 rounded-xl p-2.5 flex items-center gap-3 shadow-2xl"
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-8 right-8 z-[100] bg-black/80 backdrop-blur-xl border border-violet-400/30 rounded-2xl p-4 flex items-center gap-4 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(0,68,221,0.2)]"
           >
-            <div className="relative w-5 h-5">
-              <div className="absolute inset-0 border-2 border-violet-400/20 rounded-full"></div>
-              <div className="absolute inset-0 border-2 border-violet-400 rounded-full border-t-transparent animate-spin"></div>
+            <div className="relative w-8 h-8 flex items-center justify-center">
+              <div className="absolute inset-0 border-[3px] border-violet-400/20 rounded-full"></div>
+              <div className="absolute inset-0 border-[3px] border-violet-400 rounded-full border-t-transparent animate-[spin_1s_cubic-bezier(0.68,-0.55,0.265,1.55)_infinite]"></div>
+              <div className="w-2 h-2 bg-violet-400 rounded-full animate-pulse blur-[1px]"></div>
             </div>
-            <div className="flex flex-col">
-              <div className="text-white font-black text-[9px] uppercase tracking-[0.1em]">Uploading...</div>
-              <div className="text-gray-500 text-[7px] font-mono uppercase tracking-widest">AI Processing</div>
+            <div className="flex flex-col pr-2">
+              <div className="text-white font-black text-[11px] uppercase tracking-[0.15em] mb-0.5 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Uploading & Magic...</div>
+              <div className="text-violet-400/80 text-[8px] font-mono uppercase tracking-widest flex items-center gap-1.5">
+                Processing Content
+                <span className="flex gap-0.5">
+                  <span className="w-1 h-1 bg-violet-400/80 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1 h-1 bg-violet-400/80 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1 h-1 bg-violet-400/80 rounded-full animate-bounce"></span>
+                </span>
+              </div>
             </div>
           </motion.div>
         )}
@@ -630,9 +667,11 @@ const Stage: React.FC<StageProps> = ({
 
       {/* AI Suggestion Popup */}
       <AnimatePresence>
-        {activeSuggestion && (
+        {suggestionsToShow.length > 0 && (
           <>
-            <SuggestionLine activeSuggestion={activeSuggestion} boxPos={suggestionBoxPos} />
+            {suggestionsToShow.map(s => (
+              <SuggestionLine key={s.id} activeSuggestion={s} boxPos={suggestionBoxPos} />
+            ))}
             <motion.div
               ref={suggestionRef}
               drag
@@ -650,53 +689,73 @@ const Stage: React.FC<StageProps> = ({
               animate={{ opacity: 1, y: 0 }}
               style={{ scale: suggestionScale }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-[20%] left-[55%] w-[340px] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
+              className="fixed top-[20%] left-[50%] -ml-[300px] w-[600px] max-w-[90vw] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[70] overflow-visible cursor-grab active:cursor-grabbing origin-center"
             >
-              <div className="bg-violet-400 text-black px-4 py-2.5 font-black text-[9px] uppercase tracking-[0.2em] flex justify-between items-center rounded-t-xl">
+              <div className="bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer text-black px-4 py-2.5 font-black text-[9px] tracking-[0.2em] flex justify-between items-center rounded-t-xl">
                 <div className="flex items-center gap-2">
-                  <Sparkles width={12} height={12} />
-                  <span>AI REWRITE</span>
+                  <img src="/logo.svg" alt="rsme logo" className="h-6 w-auto brightness-0 invert opacity-90" />
                 </div>
-                <button onClick={onCloseSuggestion} className="hover:rotate-90 transition-transform p-1">
+                <button
+                  onClick={() => {
+                    onCloseSuggestion();
+                    if (onDeselectSuggestion) {
+                      suggestionsToShow.forEach(s => onDeselectSuggestion(s.id));
+                    }
+                  }}
+                  className="hover:rotate-90 transition-transform p-1"
+                >
                   <X width={14} height={14} />
                 </button>
               </div>
 
-              <div className="p-5">
-                <div className="mb-4">
-                  <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                    <div className="w-1 h-1 rounded-full bg-gray-600"></div>
-                    CURRENT
-                  </div>
-                  <div className="text-[10px] text-gray-400 font-medium leading-relaxed italic border-l-2 border-white/5 pl-3 py-1 bg-white/[0.02] rounded-r">
-                    "{activeSuggestion.original.length > 100 ? activeSuggestion.original.substring(0, 100) + '...' : activeSuggestion.original}"
-                  </div>
-                </div>
+              <div className="p-4 flex flex-col gap-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+                {suggestionsToShow.map(s => (
+                  <div key={s.id} className="flex flex-col gap-3 pb-4 border-b border-white/5 last:border-0 last:pb-0">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                          <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+                          CURRENT
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-medium leading-relaxed italic border-l-2 border-white/5 pl-3 py-1 bg-white/[0.02] rounded-r">
+                          "{s.original.length > 200 ? s.original.substring(0, 200) + '...' : s.original}"
+                        </div>
+                      </div>
 
-                <div className="mb-6 p-4 bg-violet-400/5 rounded-lg border border-violet-400/20 relative group">
-                  <div className="text-[8px] font-black text-violet-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
-                    SUGGESTION
-                  </div>
-                  <div className="text-xs text-white font-semibold leading-relaxed">
-                    {activeSuggestion.suggestion}
-                  </div>
-                </div>
+                      <div className="flex-1 p-3 bg-violet-400/5 rounded-lg border border-violet-400/20 relative group">
+                        <div className="text-[8px] font-black text-violet-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
+                          SUGGESTION
+                        </div>
+                        <div className="text-xs text-white font-semibold leading-relaxed">
+                          {s.suggestion}
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={onCloseSuggestion}
-                    className="flex-1 py-2 bg-white/5 border border-white/10 text-gray-400 text-[9px] font-bold rounded-lg uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
-                  >
-                    DISCARD
-                  </button>
-                  <button
-                    onClick={() => handleApplySuggestion(activeSuggestion)}
-                    className="flex-2 py-2 bg-violet-400 text-black text-[9px] font-black rounded-lg uppercase tracking-widest hover:bg-violet-300 shadow-[0_5px_15px_rgba(0,68,221,0.2)] hover:-translate-y-0.5 transition-all active:translate-y-0 flex items-center justify-center gap-2"
-                  >
-                    APPLY <ArrowRight width={12} height={12} />
-                  </button>
-                </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => {
+                          if (activeSuggestion && activeSuggestion.id === s.id) {
+                            onCloseSuggestion();
+                          }
+                          if (onDeselectSuggestion) {
+                            onDeselectSuggestion(s.id);
+                          }
+                        }}
+                        className="px-4 py-1.5 bg-white/5 border border-white/10 text-gray-400 text-[9px] font-bold rounded-lg uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
+                      >
+                        DISCARD
+                      </button>
+                      <button
+                        onClick={() => handleApplySuggestion(s)}
+                        className="px-4 py-1.5 bg-violet-400 text-black text-[9px] font-black rounded-lg uppercase tracking-widest hover:bg-violet-300 shadow-[0_5px_15px_rgba(0,68,221,0.2)] hover:-translate-y-0.5 transition-all active:translate-y-0 flex items-center justify-center gap-2"
+                      >
+                        APPLY <ArrowRight width={12} height={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </>
@@ -1052,12 +1111,12 @@ const SuggestionLine: React.FC<{ activeSuggestion: AISuggestion, boxPos: { x: nu
     <svg className="fixed inset-0 pointer-events-none z-[65] w-full h-full">
       <defs>
         <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
-          <circle cx="5" cy="5" r="4" fill="#fbbf24" />
+          <circle cx="5" cy="5" r="4" fill="#8b5cf6" />
         </marker>
       </defs>
       <motion.path
         d={`M ${boxPos.x} ${boxPos.y} L ${targetPos.x} ${targetPos.y}`}
-        stroke="#fbbf24"
+        stroke="#8b5cf6"
         strokeWidth="1.5"
         strokeDasharray="4 4"
         fill="none"
