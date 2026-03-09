@@ -124,7 +124,240 @@ const PaperPage: React.FC<React.PropsWithChildren<{ className?: string, themeCla
   </div>
 );
 
-const ClosingBlock: React.FC<{ resume: ResumeData, theme: ResumeTheme | LetterTheme }> = ({ resume, theme }) => (
+const SIGNATURE_FONTS = [
+  { name: 'Serif Script', style: 'font-serif italic' },
+  { name: 'Cursive', style: 'font-[cursive] italic' },
+  { name: 'Elegant', style: 'font-serif font-light tracking-widest' },
+  { name: 'Bold', style: 'font-sans font-black tracking-tight' },
+];
+
+const SignatureDialog: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (sig: { type: 'draw' | 'type' | 'upload'; data: string; fontStyle?: string }) => void;
+  name: string;
+}> = ({ isOpen, onClose, onSave, name }) => {
+  const [tab, setTab] = useState<'draw' | 'type' | 'upload'>('draw');
+  const [typedText, setTypedText] = useState(name.split(' ')[0]);
+  const [selectedFont, setSelectedFont] = useState(0);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (isOpen && tab === 'draw' && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    }
+  }, [isOpen, tab]);
+
+  const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    isDrawingRef.current = true;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    lastPosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#111111';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    lastPosRef.current = { x, y };
+  };
+
+  const stopDraw = () => { isDrawingRef.current = false; };
+
+  const clearCanvas = () => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setUploadedImage(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = () => {
+    if (tab === 'draw' && canvasRef.current) {
+      onSave({ type: 'draw', data: canvasRef.current.toDataURL('image/png') });
+    } else if (tab === 'type') {
+      onSave({ type: 'type', data: typedText, fontStyle: SIGNATURE_FONTS[selectedFont].style });
+    } else if (tab === 'upload' && uploadedImage) {
+      onSave({ type: 'upload', data: uploadedImage });
+    }
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const tabs = [
+    { id: 'draw' as const, label: 'Draw' },
+    { id: 'type' as const, label: 'Type' },
+    { id: 'upload' as const, label: 'Upload' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#1E1E1E] border border-[#333] w-[440px] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4">
+          <div className="flex justify-between items-center mb-1">
+            <h3 className="text-white font-bold text-sm tracking-tight">SIGNATURE</h3>
+            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Add your personal signature</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 px-6 mb-4">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${tab === t.id ? 'bg-violet-400 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="px-6 pb-2">
+          {tab === 'draw' && (
+            <div>
+              <div className="relative rounded-xl overflow-hidden border border-[#333] bg-white">
+                <canvas
+                  ref={canvasRef}
+                  width={392}
+                  height={140}
+                  className="cursor-crosshair w-full"
+                  onMouseDown={startDraw}
+                  onMouseMove={draw}
+                  onMouseUp={stopDraw}
+                  onMouseLeave={stopDraw}
+                />
+                <div className="absolute bottom-3 left-3 right-3 border-b border-dashed border-gray-300"></div>
+              </div>
+              <button
+                onClick={clearCanvas}
+                className="mt-3 text-[9px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {tab === 'type' && (
+            <div>
+              <input
+                type="text"
+                value={typedText}
+                onChange={(e) => setTypedText(e.target.value)}
+                className="w-full bg-white/5 border border-[#333] rounded-xl px-4 py-3 text-white text-sm font-medium focus:outline-none focus:border-violet-400/50 transition-colors mb-4"
+                placeholder="Type your signature..."
+              />
+              <div className="grid grid-cols-2 gap-2">
+                {SIGNATURE_FONTS.map((font, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedFont(i)}
+                    className={`p-4 rounded-xl border transition-all bg-white text-black text-center ${selectedFont === i ? 'border-violet-400 shadow-[0_0_15px_rgba(0,68,221,0.3)]' : 'border-[#333] hover:border-white/20'}`}
+                  >
+                    <span className={`text-xl ${font.style}`}>{typedText || name.split(' ')[0]}</span>
+                    <div className="text-[8px] text-gray-400 mt-1 uppercase tracking-widest font-sans not-italic font-bold">{font.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === 'upload' && (
+            <div>
+              {uploadedImage ? (
+                <div className="relative rounded-xl overflow-hidden border border-[#333] bg-white p-4 flex items-center justify-center min-h-[140px]">
+                  <img src={uploadedImage} alt="Signature" className="max-h-[120px] max-w-full object-contain" />
+                  <button
+                    onClick={() => setUploadedImage(null)}
+                    className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center min-h-[140px] rounded-xl border-2 border-dashed border-[#333] hover:border-violet-400/50 cursor-pointer transition-colors bg-white/[0.02]">
+                  <svg className="w-8 h-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Upload signature image</span>
+                  <span className="text-[9px] text-gray-600 mt-1">PNG, JPG or SVG</span>
+                  <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+                </label>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 px-6 py-5 border-t border-[#333] mt-4">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-black bg-violet-400 hover:bg-violet-300 rounded-xl shadow-[0_5px_15px_rgba(0,68,221,0.2)] hover:-translate-y-0.5 transition-all active:translate-y-0"
+          >
+            Save Signature
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface SignatureData {
+  type: 'draw' | 'type' | 'upload';
+  data: string;
+  fontStyle?: string;
+}
+
+const ClosingBlock: React.FC<{
+  resume: ResumeData;
+  theme: ResumeTheme | LetterTheme;
+  signature: SignatureData | null;
+  onSignatureClick: () => void;
+}> = ({ resume, theme, signature, onSignatureClick }) => (
   <div className={`mt-8 pt-6 border-t border-gray-100 flex justify-between items-end animate-in fade-in duration-700 ${theme === LetterTheme.CLASSIC ? 'border-gray-200' : ''}`}>
     <div className={theme === LetterTheme.CLASSIC ? 'text-left' : ''}>
       <div className={`text-[11px] mb-2 tracking-tighter uppercase ${theme === LetterTheme.CLASSIC ? 'text-gray-600 font-serif italic normal-case tracking-normal' : 'text-gray-400 font-bold italic'}`}>
@@ -134,9 +367,30 @@ const ClosingBlock: React.FC<{ resume: ResumeData, theme: ResumeTheme | LetterTh
         {resume.name}
       </div>
     </div>
-    <div className={`w-24 h-12 italic font-serif text-2xl select-none px-2 flex items-end ${theme === LetterTheme.CLASSIC ? 'border-b border-gray-300 text-gray-400 opacity-60' : 'border-b-2 border-black/10 text-gray-200 opacity-40'}`}>
-      {resume.name.split(' ')[0]}
-    </div>
+    <button
+      onClick={onSignatureClick}
+      className={`w-28 h-14 select-none px-2 flex items-center justify-center cursor-pointer transition-all hover:opacity-80 rounded-lg group relative ${theme === LetterTheme.CLASSIC ? 'border-b border-gray-300' : 'border-b-2 border-black/10'}`}
+      title="Click to add signature"
+    >
+      {signature ? (
+        signature.type === 'type' ? (
+          <span className={`text-2xl text-black ${signature.fontStyle || 'font-serif italic'}`}>{signature.data}</span>
+        ) : (
+          <img src={signature.data} alt="Signature" className="max-h-[48px] max-w-full object-contain" />
+        )
+      ) : (
+        <>
+          <span className={`italic font-serif text-2xl ${theme === LetterTheme.CLASSIC ? 'text-gray-400 opacity-60' : 'text-gray-200 opacity-40'}`}>
+            {resume.name.split(' ')[0]}
+          </span>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 rounded-lg">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </div>
+        </>
+      )}
+    </button>
   </div>
 );
 
@@ -159,6 +413,8 @@ const Stage: React.FC<StageProps> = ({
   const [displayedValues, setDisplayedValues] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isOver, setIsOver] = useState(false);
+  const [signature, setSignature] = useState<SignatureData | null>(null);
+  const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [sectionTitles, setSectionTitles] = useState({
     contact: 'Contact',
     skills: 'Skills',
@@ -653,6 +909,14 @@ const Stage: React.FC<StageProps> = ({
         </div>
       )}
 
+      {/* Signature Dialog */}
+      <SignatureDialog
+        isOpen={showSignatureDialog}
+        onClose={() => setShowSignatureDialog(false)}
+        onSave={(sig) => setSignature(sig)}
+        name={resume.name}
+      />
+
       {/* AI Suggestion Popup */}
       <AnimatePresence>
         {suggestionsToShow.length > 0 && (
@@ -1039,7 +1303,7 @@ const Stage: React.FC<StageProps> = ({
                       )}
                     </div>
 
-                    {index === letterPages.length - 1 && <ClosingBlock resume={resume} theme={theme} />}
+                    {index === letterPages.length - 1 && <ClosingBlock resume={resume} theme={theme} signature={signature} onSignatureClick={() => setShowSignatureDialog(true)} />}
                   </div>
                 </PaperPage>
               </div>
