@@ -141,6 +141,10 @@ const App: React.FC = () => {
     setIsAiLoading(false);
   };
 
+  const handleRemoveJobLink = (index: number) => {
+    setJobLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleGenerateCoverLetter = async () => {
     setIsAiLoading(true);
     const content = await generateCoverLetter(resume, coverLetterContext);
@@ -187,6 +191,7 @@ const App: React.FC = () => {
         onAddJobLink={handleAddJobLink}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        onRemoveJobLink={handleRemoveJobLink}
       />
       
       <Stage 
@@ -210,6 +215,7 @@ const App: React.FC = () => {
         suggestions={suggestions}
         selectedSuggestionIds={selectedSuggestionIds}
         onDeselectSuggestion={(id) => setSelectedSuggestionIds(prev => prev.filter(i => i !== id))}
+        onApplySelected={handleApplySelected}
       />
     </div>
   );

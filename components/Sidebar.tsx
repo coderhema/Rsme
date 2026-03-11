@@ -15,7 +15,8 @@ import {
   Sparks as Sparkles,
   Page,
   ViewGrid,
-  Settings
+  Settings,
+  Xmark
 } from 'iconoir-react';
 import { Tooltip } from './Tooltip';
 
@@ -40,10 +41,11 @@ interface SidebarProps {
   onAddJobLink: (url: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onRemoveJobLink: (index: number) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse
+  mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse, onRemoveJobLink
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -234,7 +236,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="flex-1">
                       <div className="text-xs font-black text-white mb-1 uppercase tracking-widest flex items-center gap-2">
-                        Profile Health
+                        ATS SCORE
                         {atsScore > 80 && <CheckCircle width={14} height={14} className="text-green-400" />}
                       </div>
                       <div className="text-[11px] text-gray-400 leading-relaxed font-medium">
@@ -268,9 +270,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {jobLinks.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-1">
                         {jobLinks.map((link, i) => (
-                          <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] text-gray-400 max-w-[120px]">
-                            <LinkIcon width={10} height={10} />
-                            <span className="truncate">{link.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                          <div key={i} className="flex items-center gap-1.5 pl-2.5 pr-1 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] text-gray-300 max-w-[120px]">
+                            <span className="truncate flex-1">{link.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                            <button 
+                              onClick={() => onRemoveJobLink(i)}
+                              className="p-1 rounded-full text-gray-500 hover:text-red-400 hover:bg-white/10 transition-colors shrink-0"
+                            >
+                              <Xmark width={12} height={12} strokeWidth={2.5} />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -301,14 +308,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center mb-1">
                         <div className="text-[8px] font-black text-violet-400/50 uppercase tracking-[0.2em]">Pending Improvements</div>
-                        {selectedSuggestionIds.length > 0 && (
-                          <button
-                            onClick={onApplySelected}
-                            className="px-2 py-1 bg-violet-400 text-black text-[8px] font-black uppercase tracking-widest rounded hover:bg-violet-300 transition-colors shadow-lg shadow-violet-400/20"
-                          >
-                            Apply Selected ({selectedSuggestionIds.length})
-                          </button>
-                        )}
                       </div>
                       {suggestions.map(s => (
                         <div
@@ -316,12 +315,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                           className={`group text-left flex items-start gap-3 p-3 bg-white/5 border rounded-lg transition-all cursor-pointer ${selectedSuggestionIds.includes(s.id) ? 'border-violet-400 bg-violet-400/5' : 'border-transparent hover:border-white/20 hover:bg-white/10'}`}
                           onClick={() => onToggleSuggestionSelection(s.id)}
                         >
-                          <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selectedSuggestionIds.includes(s.id) ? 'border-violet-400 bg-violet-400' : 'border-[#444] group-hover:border-gray-500'}`}>
-                            {selectedSuggestionIds.includes(s.id) && <CheckCircle width={10} height={10} className="text-black" />}
+                          <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selectedSuggestionIds.includes(s.id) ? 'border-violet-400 bg-violet-400' : 'border-[#444] group-hover:border-gray-500'}`}>
+                            {selectedSuggestionIds.includes(s.id) && <CheckCircle width={14} height={14} className="text-black" />}
                           </div>
                           <div className="flex-1 min-w-0" onClick={(e) => {
                             e.stopPropagation();
-                            onSelectSuggestion(s);
+                            if (!selectedSuggestionIds.includes(s.id)) {
+                              onSelectSuggestion(s);
+                            }
+                            onToggleSuggestionSelection(s.id);
                           }}>
                             <div className="flex justify-between text-[9px] font-black mb-1 tracking-widest uppercase text-violet-400">
                               {s.type}
@@ -344,9 +346,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                           key={s.id}
                           className="text-left flex items-start gap-3 p-3 bg-white/[0.02] border border-white/5 rounded-lg transition-all"
                         >
-                          <div className="mt-0.5 w-4 h-4 rounded-full bg-violet-400 flex items-center justify-center shrink-0">
-                            <svg className="w-2.5 h-2.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                          <div className="mt-0.5 w-5 h-5 rounded-full bg-violet-400 flex items-center justify-center shrink-0">
+                            <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">

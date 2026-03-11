@@ -57,26 +57,81 @@ export const getAISuggestions = async (resume: ResumeData, jobContext?: string):
 
 export const calculateATSScore = async (resume: ResumeData, jobContext?: string): Promise<number> => {
   try {
+    // 1. Base Completeness & Structure (Max 30 points)
+    let baseScore = 0;
+    
+    // Contact Info Checks
+    if (resume.name && resume.name.trim() !== "Fullname Here") baseScore += 2;
+    if (resume.email && resume.email.includes('@') && resume.email !== "name@email.com") baseScore += 4;
+    if (resume.phone && resume.phone.trim().length > 6 && !resume.phone.includes("555 0192")) baseScore += 4;
+    
+    // Formatting & Section Checks
+    if (resume.summary && resume.summary.length > 50 && !resume.summary.includes("A brief summary")) baseScore += 5;
+    if (resume.experience && resume.experience.length > 0 && resume.experience[0].company !== "Company Name") {
+       baseScore += 5;
+       const avgDescLength = resume.experience.reduce((acc, exp) => acc + exp.description.length, 0) / resume.experience.length;
+       if (avgDescLength > 80) baseScore += 5;
+    }
+    
+    // Skills & Education Checks
+    if (resume.skills && resume.skills.length > 3 && resume.skills[0] !== "Skill 1") baseScore += 3;
+    if (resume.education && resume.education.length > 0 && resume.education[0].degree !== "Degree Name") baseScore += 2;
+
+    const resumeText = [
+      resume.summary,
+      ...resume.experience.map(e => `${e.title} ${e.description}`),
+      ...resume.skills
+    ].join(' ').toLowerCase();
+
+    // 2. Keyword & Context Matching (Max 40 points)
+    let keywordScore = 0;
+    if (jobContext && jobContext.trim().length > 0) {
+      // Extract meaningful words from job context
+      const jobWords = jobContext.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 4);
+      const uniqueJobWords = [...new Set(jobWords)];
+      
+      let matchCount = 0;
+      uniqueJobWords.forEach(word => {
+        if (resumeText.includes(word)) matchCount++;
+      });
+      
+      const matchPercentage = uniqueJobWords.length > 0 ? (matchCount / uniqueJobWords.length) : 0;
+      // Scale percentage to 40 max points
+      keywordScore = Math.min(40, Math.floor(matchPercentage * 50)); 
+    } else {
+      // If no job context, calculate based on standard strong resume keywords / action verbs
+      const actionVerbs = ['managed', 'developed', 'led', 'created', 'designed', 'improved', 'increased', 'reduced', 'implemented', 'achieved', 'optimized', 'spearheaded', 'resolved', 'delivered', 'orchestrated'];
+      let verbCount = 0;
+      actionVerbs.forEach(verb => {
+        if (resumeText.includes(verb)) verbCount++;
+      });
+      keywordScore = Math.min(40, verbCount * 4);
+    }
+
+    // 3. AI Semantic Value Score (Max 30 points)
     const response = await groq.chat.completions.create({
       model: MODEL,
-      temperature: 0.3,
+      temperature: 0.2,
       messages: [
         {
           role: "user",
-          content: `Evaluate this resume ${jobContext ? `against this job context: "${jobContext}"` : ''} and provide a single integer score from 0 to 100 representing its ATS compatibility and professional strength.
+          content: `Evaluate the overall professional formatting, structural flow, and semantic value of this resume. ${jobContext ? `Consider how well the semantic narrative aligns with this job context: "${jobContext}"` : 'Evaluate against general industry ATS standards.'}
       
-      Resume:
+      Resume Data:
       ${JSON.stringify(resume)}
       
-      Return ONLY the integer number. Do not add any extra text or context.`
+      Score the professional strength and impact from 0 to 30.
+      Return ONLY a JSON object: {"semanticScore": number}`
         }
       ]
     });
     
-    const scoreText = response.choices[0]?.message?.content?.trim() || '50';
-    const scoreMatch = scoreText.match(/\d+/);
-    const score = scoreMatch ? parseInt(scoreMatch[0]) : 50;
-    return isNaN(score) ? 50 : Math.min(100, Math.max(0, score));
+    const parsed = extractJson(response.choices[0]?.message?.content || '{}');
+    const semanticScore = parsed?.semanticScore ? parseInt(parsed.semanticScore) : 15;
+    const finalSemanticScore = isNaN(semanticScore) ? 15 : Math.min(30, Math.max(0, semanticScore));
+
+    const totalScore = baseScore + keywordScore + finalSemanticScore;
+    return Math.min(100, Math.max(0, totalScore));
   } catch (error) {
     console.error("ATS Score Error:", error);
     return 50;

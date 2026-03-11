@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
-import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus } from 'iconoir-react';
+import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus, DoubleCheck } from 'iconoir-react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 import { parseResume } from '../services/geminiService';
 
@@ -25,6 +25,7 @@ interface StageProps {
   onCloseRoast: () => void;
   isAiLoading: boolean;
   setIsAiLoading: (v: boolean) => void;
+  onApplySelected: () => void;
 }
 
 const PAGE_HEIGHT = 842;
@@ -40,7 +41,7 @@ interface EditableTextProps {
   className?: string;
   multiline?: boolean;
   isEditing: boolean;
-  animatingField: string | null;
+  animatingFields: string[];
   displayedValues: Record<string, string>;
   isActiveSuggestion?: boolean;
 }
@@ -52,11 +53,11 @@ const EditableText: React.FC<EditableTextProps> = ({
   className,
   multiline = false,
   isEditing,
-  animatingField,
+  animatingFields,
   displayedValues,
   isActiveSuggestion = false
 }) => {
-  const isThisAnimating = animatingField === fieldKey;
+  const isThisAnimating = animatingFields.includes(fieldKey);
   const valToDisplay = isThisAnimating ? (displayedValues[fieldKey] || value) : value;
 
   const highlightClass = isActiveSuggestion ? 'ring-2 ring-violet-400 ring-offset-4 ring-offset-white bg-violet-50 rounded-sm transition-all duration-500' : '';
@@ -396,7 +397,7 @@ const ClosingBlock: React.FC<{
 
 const Stage: React.FC<StageProps> = ({
   resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
-  onRoast, onUploadResume, roast, onCloseRoast, isAiLoading, setIsAiLoading
+  onRoast, onUploadResume, roast, onCloseRoast, isAiLoading, setIsAiLoading, onApplySelected
 }) => {
   const [zoom, setZoom] = useState<number>(0.85);
   const zoomValue = useMotionValue(zoom);
@@ -409,7 +410,7 @@ const Stage: React.FC<StageProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [animatingField, setAnimatingField] = useState<string | null>(null);
+  const [animatingFields, setAnimatingFields] = useState<string[]>([]);
   const [displayedValues, setDisplayedValues] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isOver, setIsOver] = useState(false);
@@ -427,12 +428,11 @@ const Stage: React.FC<StageProps> = ({
     setSectionTitles(prev => ({ ...prev, [key]: v }));
 
   const suggestionsToShow = useMemo(() => {
-    if (activeSuggestion) return [activeSuggestion];
     if (selectedSuggestionIds.length > 0) {
       return suggestions.filter(s => selectedSuggestionIds.includes(s.id));
     }
     return [];
-  }, [activeSuggestion, selectedSuggestionIds, suggestions]);
+  }, [selectedSuggestionIds, suggestions]);
 
   const [suggestionBoxPos, setSuggestionBoxPos] = useState({ x: 0, y: 0 });
   const suggestionRef = useRef<HTMLDivElement>(null);
@@ -534,12 +534,12 @@ const Stage: React.FC<StageProps> = ({
 
     setDisplayedValues(prev => {
       const merged = { ...newValues };
-      if (animatingField) {
-        merged[animatingField] = prev[animatingField];
-      }
+      animatingFields.forEach(field => {
+        merged[field] = prev[field] || '';
+      });
       return merged;
     });
-  }, [resume, coverLetter, animatingField]);
+  }, [resume, coverLetter, animatingFields]);
 
   useEffect(() => {
     smoothZoom.set(zoom);
@@ -575,7 +575,7 @@ const Stage: React.FC<StageProps> = ({
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const animateTyping = (fieldKey: string, targetText: string) => {
-    setAnimatingField(fieldKey);
+    setAnimatingFields(prev => Array.from(new Set([...prev, fieldKey])));
     let currentText = '';
     let index = 0;
 
@@ -587,7 +587,7 @@ const Stage: React.FC<StageProps> = ({
         index += charsToAdd;
       } else {
         clearInterval(interval);
-        setTimeout(() => setAnimatingField(null), 500);
+        setTimeout(() => setAnimatingFields(prev => prev.filter(f => f !== fieldKey)), 500);
       }
     }, 12);
   };
@@ -919,13 +919,13 @@ const Stage: React.FC<StageProps> = ({
 
       {/* AI Suggestion Popup */}
       <AnimatePresence>
+        {suggestionsToShow.map(s => (
+          <SuggestionLine key={`line-${s.id}`} activeSuggestion={s} boxPos={suggestionBoxPos} />
+        ))}
         {suggestionsToShow.length > 0 && (
-          <>
-            {suggestionsToShow.map(s => (
-              <SuggestionLine key={s.id} activeSuggestion={s} boxPos={suggestionBoxPos} />
-            ))}
-            <motion.div
-              ref={suggestionRef}
+          <motion.div
+            key="suggestion-popup-box"
+            ref={suggestionRef}
               drag
               dragMomentum={false}
               onDrag={(e, info) => {
@@ -947,17 +947,34 @@ const Stage: React.FC<StageProps> = ({
                 <div className="flex items-center gap-2">
                   <img src="/logo.svg" alt="rsme logo" className="h-6 w-auto brightness-0 invert opacity-90" />
                 </div>
-                <button
-                  onClick={() => {
-                    onCloseSuggestion();
-                    if (onDeselectSuggestion) {
-                      suggestionsToShow.forEach(s => onDeselectSuggestion(s.id));
-                    }
-                  }}
-                  className="hover:rotate-90 transition-transform p-1"
-                >
-                  <X width={14} height={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  {suggestionsToShow.length >= 2 && (
+                    <button
+                      onClick={() => {
+                        suggestionsToShow.forEach(s => handleApplySuggestion(s));
+                        onCloseSuggestion();
+                        if (onDeselectSuggestion) {
+                          suggestionsToShow.forEach(s => onDeselectSuggestion(s.id));
+                        }
+                      }}
+                      className="hover:scale-110 transition-transform w-[22px] h-[22px] bg-white hover:bg-gray-100 border-[1.5px] border-black/10 rounded-full flex items-center justify-center shadow-sm group relative"
+                      title="Apply All Selected"
+                    >
+                      <DoubleCheck width={12} height={12} className="text-black/80 group-hover:text-black" strokeWidth={3} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      onCloseSuggestion();
+                      if (onDeselectSuggestion) {
+                        suggestionsToShow.forEach(s => onDeselectSuggestion(s.id));
+                      }
+                    }}
+                    className="hover:rotate-90 transition-transform p-1 flex items-center justify-center shrink-0"
+                  >
+                    <X width={16} height={16} strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
 
               <div className="p-4 flex flex-col gap-4 max-h-[60vh] overflow-y-auto no-scrollbar">
@@ -1010,7 +1027,6 @@ const Stage: React.FC<StageProps> = ({
                 ))}
               </div>
             </motion.div>
-          </>
         )}
       </AnimatePresence>
 
@@ -1034,7 +1050,7 @@ const Stage: React.FC<StageProps> = ({
                             onChange={(v) => onUpdateResume('name', v)}
                             className={`text-4xl font-extrabold uppercase tracking-tight ${theme === ResumeTheme.MODERN ? 'font-["Playfair_Display"] text-5xl normal-case' : ''} ${theme === ResumeTheme.MINIMAL ? 'text-3xl font-light tracking-[0.3em] text-gray-900' : ''}`}
                             isEditing={isEditing}
-                            animatingField={animatingField}
+                            animatingFields={animatingFields}
                             displayedValues={displayedValues}
                           />
                           <EditableText
@@ -1043,7 +1059,7 @@ const Stage: React.FC<StageProps> = ({
                             onChange={(v) => onUpdateResume('role', v)}
                             className={`text-sm font-medium uppercase tracking-[0.2em] mt-2 ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-light' : 'text-gray-500'}`}
                             isEditing={isEditing}
-                            animatingField={animatingField}
+                            animatingFields={animatingFields}
                             displayedValues={displayedValues}
                           />
                         </div>
@@ -1052,9 +1068,9 @@ const Stage: React.FC<StageProps> = ({
                           <div className={`col-span-4 ${(theme === ResumeTheme.CREATIVE || theme === ResumeTheme.EXECUTIVE) ? 'border-r pr-4' : ''}`}>
                             <SectionTitle title={sectionTitles.contact} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('contact', v)} />
                             <div className={`text-[11px] text-gray-600 leading-relaxed space-y-1 mb-8 font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400' : ''}`}>
-                              <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
-                              <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
-                              <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingField={animatingField} displayedValues={displayedValues} />
+                              <EditableText fieldKey="email" value={resume.email} onChange={(v) => onUpdateResume('email', v)} isEditing={isEditing} animatingFields={animatingFields} displayedValues={displayedValues} />
+                              <EditableText fieldKey="phone" value={resume.phone} onChange={(v) => onUpdateResume('phone', v)} isEditing={isEditing} animatingFields={animatingFields} displayedValues={displayedValues} />
+                              <EditableText fieldKey="location" value={resume.location} onChange={(v) => onUpdateResume('location', v)} isEditing={isEditing} animatingFields={animatingFields} displayedValues={displayedValues} />
                             </div>
                             <SectionTitle title={sectionTitles.skills} minimal={theme === ResumeTheme.MINIMAL} isEditing={isEditing} onChange={(v) => updateSectionTitle('skills', v)} />
                             <div className="flex flex-wrap gap-1 mb-8">
@@ -1064,7 +1080,7 @@ const Stage: React.FC<StageProps> = ({
                                 onChange={(v) => onUpdateResume('skills', v.split(',').map(s => s.trim()).filter(s => s !== ''))}
                                 className={`text-[10px] font-bold tracking-tight w-full ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-normal' : 'text-gray-700'}`}
                                 isEditing={isEditing}
-                                animatingField={animatingField}
+                                animatingFields={animatingFields}
                                 displayedValues={displayedValues}
                               />
                             </div>
@@ -1077,7 +1093,7 @@ const Stage: React.FC<StageProps> = ({
                                   onChange={(v) => onUpdateEducation(ed.id, 'degree', v)}
                                   className={`text-[11px] font-bold tracking-tight ${theme === ResumeTheme.MINIMAL ? 'font-normal' : ''}`}
                                   isEditing={isEditing}
-                                  animatingField={animatingField}
+                                  animatingFields={animatingFields}
                                   displayedValues={displayedValues}
                                 />
                                 <div className="flex items-center gap-1">
@@ -1087,7 +1103,7 @@ const Stage: React.FC<StageProps> = ({
                                     onChange={(v) => onUpdateEducation(ed.id, 'school', v)}
                                     className="text-[10px] text-gray-500 italic"
                                     isEditing={isEditing}
-                                    animatingField={animatingField}
+                                    animatingFields={animatingFields}
                                     displayedValues={displayedValues}
                                   />
                                   <span className="text-[10px] text-gray-500">•</span>
@@ -1097,7 +1113,7 @@ const Stage: React.FC<StageProps> = ({
                                     onChange={(v) => onUpdateEducation(ed.id, 'year', v)}
                                     className="text-[10px] text-gray-500 italic"
                                     isEditing={isEditing}
-                                    animatingField={animatingField}
+                                    animatingFields={animatingFields}
                                     displayedValues={displayedValues}
                                   />
                                 </div>
@@ -1114,7 +1130,7 @@ const Stage: React.FC<StageProps> = ({
                                 className={`text-[11px] leading-relaxed font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-500 font-normal' : 'text-gray-700'}`}
                                 multiline
                                 isEditing={isEditing}
-                                animatingField={animatingField}
+                                animatingFields={animatingFields}
                                 displayedValues={displayedValues}
                                 isActiveSuggestion={isFieldActiveSuggestion('summary')}
                               />
@@ -1130,7 +1146,7 @@ const Stage: React.FC<StageProps> = ({
                                       onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
                                       className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
                                       isEditing={isEditing}
-                                      animatingField={animatingField}
+                                      animatingFields={animatingFields}
                                       displayedValues={displayedValues}
                                       isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
                                     />
@@ -1140,7 +1156,7 @@ const Stage: React.FC<StageProps> = ({
                                       onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
                                       className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
                                       isEditing={isEditing}
-                                      animatingField={animatingField}
+                                      animatingFields={animatingFields}
                                       displayedValues={displayedValues}
                                       isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
                                     />
@@ -1151,7 +1167,7 @@ const Stage: React.FC<StageProps> = ({
                                     onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
                                     className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
                                     isEditing={isEditing}
-                                    animatingField={animatingField}
+                                    animatingFields={animatingFields}
                                     displayedValues={displayedValues}
                                     isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
                                   />
@@ -1162,7 +1178,7 @@ const Stage: React.FC<StageProps> = ({
                                     className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
                                     multiline
                                     isEditing={isEditing}
-                                    animatingField={animatingField}
+                                    animatingFields={animatingFields}
                                     displayedValues={displayedValues}
                                     isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
                                   />
@@ -1187,7 +1203,7 @@ const Stage: React.FC<StageProps> = ({
                               className={`text-[11px] leading-relaxed font-medium ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-normal' : 'text-gray-600'}`}
                               multiline
                               isEditing={isEditing}
-                              animatingField={animatingField}
+                              animatingFields={animatingFields}
                               displayedValues={displayedValues}
                             />
                           </div>
@@ -1205,7 +1221,7 @@ const Stage: React.FC<StageProps> = ({
                                       onChange={(v) => onUpdateExperience(exp.id, 'title', v)}
                                       className={`font-bold text-sm tracking-tight flex-1 mr-2 ${theme === ResumeTheme.MINIMAL ? 'font-medium' : ''}`}
                                       isEditing={isEditing}
-                                      animatingField={animatingField}
+                                      animatingFields={animatingFields}
                                       displayedValues={displayedValues}
                                       isActiveSuggestion={isFieldActiveSuggestion(`exp-title-${exp.id}`)}
                                     />
@@ -1215,7 +1231,7 @@ const Stage: React.FC<StageProps> = ({
                                       onChange={(v) => onUpdateExperience(exp.id, 'period', v)}
                                       className="text-[10px] text-gray-400 font-mono whitespace-nowrap text-right"
                                       isEditing={isEditing}
-                                      animatingField={animatingField}
+                                      animatingFields={animatingFields}
                                       displayedValues={displayedValues}
                                       isActiveSuggestion={isFieldActiveSuggestion(`exp-period-${exp.id}`)}
                                     />
@@ -1226,7 +1242,7 @@ const Stage: React.FC<StageProps> = ({
                                     onChange={(v) => onUpdateExperience(exp.id, 'company', v)}
                                     className={`text-[11px] font-bold mb-2 uppercase tracking-widest ${theme === ResumeTheme.MINIMAL ? 'text-gray-400 font-medium' : 'text-violet-600/80'}`}
                                     isEditing={isEditing}
-                                    animatingField={animatingField}
+                                    animatingFields={animatingFields}
                                     displayedValues={displayedValues}
                                     isActiveSuggestion={isFieldActiveSuggestion(`exp-company-${exp.id}`)}
                                   />
@@ -1237,7 +1253,7 @@ const Stage: React.FC<StageProps> = ({
                                     className={`text-[11px] leading-relaxed ${theme === ResumeTheme.MINIMAL ? 'text-gray-500' : 'text-gray-700'}`}
                                     multiline
                                     isEditing={isEditing}
-                                    animatingField={animatingField}
+                                    animatingFields={animatingFields}
                                     displayedValues={displayedValues}
                                     isActiveSuggestion={isFieldActiveSuggestion(`exp-desc-${exp.id}`)}
                                   />
@@ -1293,7 +1309,7 @@ const Stage: React.FC<StageProps> = ({
                           className="text-sm leading-[1.9] text-gray-800 text-justify font-medium"
                           multiline
                           isEditing={isEditing}
-                          animatingField={animatingField}
+                          animatingFields={animatingFields}
                           displayedValues={displayedValues}
                         />
                       ) : (
@@ -1391,7 +1407,12 @@ const SuggestionLine: React.FC<{ activeSuggestion: AISuggestion, boxPos: { x: nu
   if (!targetPos.x || !boxPos.x) return null;
 
   return (
-    <svg className="fixed inset-0 pointer-events-none z-[65] w-full h-full">
+    <motion.svg 
+      className="fixed inset-0 pointer-events-none z-[65] w-full h-full"
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
       <defs>
         <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
           <circle cx="5" cy="5" r="4" fill="#8b5cf6" />
@@ -1403,11 +1424,14 @@ const SuggestionLine: React.FC<{ activeSuggestion: AISuggestion, boxPos: { x: nu
         strokeWidth="1.5"
         strokeDasharray="4 4"
         fill="none"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: 0.6 }}
+        variants={{
+          hidden: { pathLength: 0, opacity: 0 },
+          visible: { pathLength: 1, opacity: 0.6, transition: { duration: 0.3, ease: "easeOut" } },
+          exit: { pathLength: 0, opacity: 0, transition: { duration: 0.3, ease: "easeIn" } }
+        }}
         markerEnd="url(#dot)"
       />
-    </svg>
+    </motion.svg>
   );
 };
 
