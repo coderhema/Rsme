@@ -19,10 +19,7 @@ interface StageProps {
   onUpdateExperience: (id: string, field: keyof ExperienceItem, value: string) => void;
   onUpdateEducation: (id: string, field: keyof EducationItem, value: string) => void;
   onUpdateCoverLetter: (v: string) => void;
-  onRoast: (data?: ResumeData | string) => void;
   onUploadResume: (data: ResumeData) => void;
-  roast: string | null;
-  onCloseRoast: () => void;
   isAiLoading: boolean;
   setIsAiLoading: (v: boolean) => void;
   onApplySelected: () => void;
@@ -397,7 +394,7 @@ const ClosingBlock: React.FC<{
 
 const Stage: React.FC<StageProps> = ({
   resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
-  onRoast, onUploadResume, roast, onCloseRoast, isAiLoading, setIsAiLoading, onApplySelected
+  onUploadResume, isAiLoading, setIsAiLoading, onApplySelected
 }) => {
   const [zoom, setZoom] = useState<number>(0.85);
   const zoomValue = useMotionValue(zoom);
@@ -710,28 +707,6 @@ const Stage: React.FC<StageProps> = ({
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result;
-      if (typeof content === 'string') {
-        // If it's a text file or JSON, we can try to parse it or just send as text
-        onRoast(content);
-      }
-    };
-
-    if (file.type === 'application/json' || file.type === 'text/plain') {
-      reader.readAsText(file);
-    } else {
-      // For other files, we'll just say we're roasting the current one for now 
-      // or we could implement PDF parsing if we had a library.
-      // But let's try to be helpful:
-      onRoast();
-    }
-  };
 
   const themeClass = getThemeClass();
 
@@ -816,10 +791,10 @@ const Stage: React.FC<StageProps> = ({
               bottom: `${((zoom - 0.5) / 1.5) * 100}%`,
               y: '50%'
             }}
-            whileHover={{ scale: 1.1, shadow: '0_0_40px_rgba(0,68,221,0.6)' }}
+            whileHover={{ scale: 1.1, boxShadow: '0 0 40px rgba(0,68,221,0.6)' }}
             whileTap={{ scale: 0.95 }}
             animate={{
-              shadow: isDragging ? '0_0_45px_rgba(0,68,221,0.6)' : '0_0_30px_rgba(0,68,221,0.4)'
+              boxShadow: isDragging ? '0 0 45px rgba(0,68,221,0.6)' : '0 0 30px rgba(0,68,221,0.4)'
             }}
             onMouseDown={(e) => {
               e.stopPropagation();
@@ -880,34 +855,7 @@ const Stage: React.FC<StageProps> = ({
         </div>
       )}
 
-      {/* Roast Popup */}
-      {roast && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-[#1A1A1A] border-2 border-red-500/30 w-[500px] rounded-2xl shadow-[0_0_100px_rgba(239,68,68,0.2)] overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="bg-red-500 text-white px-6 py-4 font-black text-xs uppercase tracking-[0.3em] flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>
-                BRUTAL AI ROAST
-              </div>
-              <button onClick={onCloseRoast} className="hover:scale-125 transition-transform text-xl leading-none">×</button>
-            </div>
-            <div className="p-8">
-              <div className="text-gray-400 font-mono text-[10px] mb-6 uppercase tracking-widest border-b border-white/5 pb-4">
-                ANALYSIS COMPLETE. PREPARE FOR EMOTIONAL DAMAGE.
-              </div>
-              <div className="text-lg text-white font-medium leading-relaxed italic mb-8 bg-red-500/5 p-6 rounded-xl border border-red-500/10">
-                "{roast}"
-              </div>
-              <button
-                onClick={onCloseRoast}
-                className="w-full py-4 bg-red-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
-              >
-                I DESERVED THIS
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Signature Dialog */}
       <SignatureDialog

@@ -184,31 +184,7 @@ export const generateCoverLetter = async (resume: ResumeData, jobDescription: st
     }
 }
 
-export const roastResume = async (resume: ResumeData | string): Promise<string> => {
-  try {
-    const resumeText = typeof resume === 'string' ? resume : JSON.stringify(resume);
-    const response = await groq.chat.completions.create({
-      model: MODEL,
-      temperature: 0.8,
-      messages: [
-        {
-          role: "user",
-          content: `You are a brutal, sarcastic, and hilarious resume roaster. 
-      Analyze the following resume and give a scathing but funny roast. 
-      Point out the clichés, the gaps, the over-inflated titles, and the boring skills.
-      Keep it under 200 words. Use emojis.
-      
-      Resume:
-      ${resumeText}`
-        }
-      ]
-    });
-    return response.choices[0]?.message?.content || "Your resume is so boring I fell asleep before I could roast it.";
-  } catch (error) {
-    console.error("Roast Error:", error);
-    return "Even the AI is too stunned to speak about this resume.";
-  }
-};
+
 
 export const parseResume = async (content: string | { data: string, mimeType: string }): Promise<ResumeData | null> => {
   try {

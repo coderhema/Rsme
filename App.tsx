@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from './types';
-import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume, analyzeJobLink, parseResume } from './services/geminiService';
+import { calculateATSScore, getAISuggestions, generateCoverLetter, analyzeJobLink, parseResume } from './services/geminiService';
 import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
 
@@ -54,7 +54,7 @@ const App: React.FC = () => {
   const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
-  const [roast, setRoast] = useState<string | null>(null);
+
   const [jobLinks, setJobLinks] = useState<string[]>([]);
   const [jobContext, setJobContext] = useState<string>("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -154,12 +154,7 @@ const App: React.FC = () => {
     setIsAiLoading(false);
   };
 
-  const handleRoast = async (data?: ResumeData | string) => {
-    setIsAiLoading(true);
-    const result = await roastResume(data || resume);
-    setRoast(result);
-    setIsAiLoading(false);
-  };
+
 
   const handleUploadResume = async (data: ResumeData) => {
     setResume(data);
@@ -206,10 +201,7 @@ const App: React.FC = () => {
         onUpdateExperience={handleUpdateExperience}
         onUpdateEducation={handleUpdateEducation}
         onUpdateCoverLetter={setCoverLetter}
-        onRoast={handleRoast}
         onUploadResume={handleUploadResume}
-        roast={roast}
-        onCloseRoast={() => setRoast(null)}
         isAiLoading={isAiLoading}
         setIsAiLoading={setIsAiLoading}
         suggestions={suggestions}
