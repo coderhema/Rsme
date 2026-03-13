@@ -208,6 +208,8 @@ export const parseResume = async (content: string | { data: string, mimeType: st
         {
           role: "user",
           content: `Extract structured resume data from this text. Maintain the professional tone and ensure the descriptions are neatly formatted and VERY concise (max 2-3 bullet points per role). Ensure all experience and education items have unique string IDs.
+
+IMPORTANT: Capture EVERY section in the document. For any section that is NOT covered by the standard fields (name, role, email, phone, location, summary, experience, skills, education, certificates), add it to "customSections" using the EXACT section title as it appears in the document. This includes sections like "Honors and Awards", "Publications", "Projects", "Languages", "Volunteer Work", "References", etc. Do NOT skip or merge any sections.
           
       Return ONLY a pure JSON object matching this structure fully:
       {
@@ -223,6 +225,16 @@ export const parseResume = async (content: string | { data: string, mimeType: st
         "skills": ["skill1", "skill2"],
         "education": [
           { "id": "ed-1", "degree": "string", "school": "string", "year": "string" }
+        ],
+        "certificates": ["string"],
+        "customSections": [
+          {
+            "id": "custom-1",
+            "name": "Exact Section Title From Document",
+            "items": [
+              { "id": "custom-1-item-1", "text": "item content" }
+            ]
+          }
         ]
       }
       
@@ -241,6 +253,19 @@ export const parseResume = async (content: string | { data: string, mimeType: st
         parsed.education = parsed.education.map((ed: any, i: number) => ({ ...ed, id: ed.id || `ed-${i}` }));
       } else { parsed.education = []; }
       if (!parsed.skills) parsed.skills = [];
+      if (!parsed.certificates) parsed.certificates = [];
+      if (parsed.customSections) {
+        parsed.customSections = parsed.customSections.map((sec: any, si: number) => ({
+          ...sec,
+          id: sec.id || `custom-${si}`,
+          items: (sec.items || []).map((item: any, ii: number) => ({
+            ...item,
+            id: item.id || `custom-${si}-item-${ii}`,
+          })),
+        }));
+      } else {
+        parsed.customSections = [];
+      }
     }
     return parsed;
   } catch (error) {

@@ -37,7 +37,8 @@ const INITIAL_RESUME: ResumeData = {
       year: "Graduation Year"
     }
   ],
-  certificates: ["Certificate Name", "Another Certification"]
+  certificates: ["Certificate Name", "Another Certification"],
+  customSections: [],
 };
 
 const App: React.FC = () => {
