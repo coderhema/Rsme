@@ -42,6 +42,11 @@ const INITIAL_RESUME: ResumeData = {
 };
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<{ name: string; email: string; seed: string }>({
+    name: "Tolulope Olugbemi",
+    email: "tolulope@typecraft.io",
+    seed: "typecraft-user-1"
+  });
   const [resume, setResume] = useState<ResumeData>(INITIAL_RESUME);
   const [coverLetter, setCoverLetter] = useState<string>("Click 'Generate' to create a custom cover letter based on your resume.");
   const [coverLetterContext, setCoverLetterContext] = useState<string>("");
@@ -165,6 +170,8 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans print:h-auto print:overflow-visible print:bg-white print:block">
       <Sidebar 
+        user={user}
+        onLogout={() => {}}
         mode={mode}
         setMode={setMode}
         atsScore={atsScore}
@@ -191,6 +198,8 @@ const App: React.FC = () => {
       />
       
       <Stage 
+        user={user}
+        onLogout={() => {}}
         resume={resume}
         coverLetter={coverLetter}
         mode={mode}

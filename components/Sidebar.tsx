@@ -16,11 +16,18 @@ import {
   Page,
   ViewGrid,
   Settings,
-  Xmark
+  Xmark,
+  User,
+  LogOut,
+  Key,
+  CreditCard
 } from 'iconoir-react';
 import { Tooltip } from './Tooltip';
+import AccountDropdown from './AccountDropdown';
 
 interface SidebarProps {
+  user: { name: string; email: string; seed: string };
+  onLogout: () => void;
   mode: AppMode;
   setMode: (mode: AppMode) => void;
   atsScore: number;
@@ -45,12 +52,13 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse, onRemoveJobLink
+  user, onLogout, mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse, onRemoveJobLink
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [newJobLink, setNewJobLink] = useState("");
   const [isStylesCollapsed, setIsStylesCollapsed] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   const resumeThemes = [
     ResumeTheme.MODERN, ResumeTheme.MINIMAL,
@@ -137,6 +145,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {isCollapsed && (
           <div className="flex flex-col gap-6 items-center w-full">
+            <div className="mb-2">
+              <AccountDropdown 
+                user={user} 
+                onLogout={onLogout} 
+                isOpen={isAccountOpen} 
+                onToggle={() => setIsAccountOpen(!isAccountOpen)} 
+                isCollapsed={true}
+              />
+            </div>
+            <div className="w-8 h-[1px] bg-[#333]" />
             <Tooltip content={mode === 'RESUME' ? 'Cover Letter' : 'Resume Maker'} side="right">
               <button
                 onClick={() => setMode(mode === 'RESUME' ? 'COVER_LETTER' : 'RESUME')}
@@ -183,7 +201,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               </Tooltip>
               <Tooltip content="Settings / Config" side="right">
-                <button className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors">
+                <button 
+                  onClick={() => setIsAccountOpen(!isAccountOpen)}
+                  className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors"
+                >
                   <Settings width={20} height={20} />
                 </button>
               </Tooltip>
@@ -352,7 +373,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex justify-between text-[9px] font-black mb-1 tracking-widest uppercase text-gray-500 line-through">
+                      <div className="flex justify-between text-[9px] font-black mb-1 tracking-widest uppercase text-gray-500 line-through">
                               {s.type}
                             </div>
                             <div className="text-xs leading-relaxed font-medium text-gray-600 line-through">
@@ -386,78 +407,96 @@ const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            <div className="mt-auto border-t border-[#333] pt-4">
-              <div
-                onClick={() => setIsStylesCollapsed(!isStylesCollapsed)}
-                className="w-full flex justify-between items-center mb-3 group cursor-pointer"
-              >
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold group-hover:text-gray-300 transition-colors">
-                  {mode === 'RESUME' ? 'Resume Styles' : 'Letter Styles'}
-                </div>
-                <div className="flex items-center gap-2">
-                  {!isStylesCollapsed && totalPages > 1 && (
-                    <div className="flex gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          scrollToIndex(Math.max(0, currentPage - 1));
-                        }}
-                        className={`p-1 hover:bg-white/10 rounded transition-colors ${currentPage === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                      >
-                        <NavArrowDown width={12} height={12} className="rotate-90 text-white" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          scrollToIndex(Math.min(totalPages - 1, currentPage + 1));
-                        }}
-                        className={`p-1 hover:bg-white/10 rounded transition-colors ${currentPage === totalPages - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
-                      >
-                        <NavArrowDown width={12} height={12} className="-rotate-90 text-white" />
-                      </button>
-                    </div>
-                  )}
-                  {isStylesCollapsed ? <NavArrowUp width={14} height={14} className="text-gray-500" /> : <NavArrowDown width={14} height={14} className="text-gray-500" />}
-                </div>
-              </div>
+      <div className={`mt-auto pt-4 border-t border-[#333] ${isCollapsed ? 'px-0 flex flex-col items-center' : ''}`}>
+        {!isCollapsed && (
+          <div className="mb-4">
+            <AccountDropdown 
+              user={user} 
+              onLogout={onLogout} 
+              isOpen={isAccountOpen} 
+              onToggle={() => setIsAccountOpen(!isAccountOpen)} 
+              isCollapsed={isCollapsed}
+            />
+          </div>
+        )}
+        
+        {!isCollapsed && (
+          <div className="pt-4 border-t border-[#333]">
 
-              <AnimatePresence initial={false}>
-                {!isStylesCollapsed && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="overflow-hidden"
+                  <div
+                    onClick={() => setIsStylesCollapsed(!isStylesCollapsed)}
+                    className="w-full flex justify-between items-center mb-3 group cursor-pointer"
                   >
-                    <div
-                      ref={scrollContainerRef}
-                      className="flex overflow-x-hidden scroll-smooth snap-x snap-mandatory no-scrollbar"
-                    >
-                      {Array.from({ length: totalPages }).map((_, pageIdx) => (
-                        <div key={pageIdx} className="min-w-full grid grid-cols-3 gap-2 snap-start pb-2">
-                          {currentThemes.slice(pageIdx * 3, pageIdx * 3 + 3).map(t => (
-                            <button
-                              key={t}
-                              onClick={() => setTheme(t)}
-                              className={`aspect-[3/4] border-2 rounded-lg overflow-hidden transition-all flex flex-col group ${theme === t ? 'border-violet-400 shadow-[0_0_15px_rgba(0,68,221,0.2)]' : 'border-[#333] hover:border-gray-500'}`}
-                            >
-                              <div className={`flex-1 m-1.5 rounded-sm shadow-sm ${mode === 'RESUME'
-                                ? (t === ResumeTheme.MODERN ? 'theme-preview-modern' : t === ResumeTheme.MINIMAL ? 'theme-preview-minimal' : 'theme-preview-creative')
-                                : (t === LetterTheme.BOLD ? 'theme-preview-creative' : t === LetterTheme.MODERN ? 'theme-preview-modern' : 'theme-preview-minimal')
-                                } bg-white opacity-90 group-hover:opacity-100 transition-opacity`}></div>
-                              <div className={`text-[8px] pb-1.5 text-center font-bold tracking-tighter truncate px-1 uppercase ${theme === t ? 'text-violet-400' : 'text-gray-500 group-hover:text-gray-300'}`}>{t}</div>
-                            </button>
+                    <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold group-hover:text-gray-300 transition-colors">
+                      {mode === 'RESUME' ? 'Resume Styles' : 'Letter Styles'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!isStylesCollapsed && totalPages > 1 && (
+                        <div className="flex gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              scrollToIndex(Math.max(0, currentPage - 1));
+                            }}
+                            className={`p-1 hover:bg-white/10 rounded transition-colors ${currentPage === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                          >
+                            <NavArrowDown width={12} height={12} className="rotate-90 text-white" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              scrollToIndex(Math.min(totalPages - 1, currentPage + 1));
+                            }}
+                            className={`p-1 hover:bg-white/10 rounded transition-colors ${currentPage === totalPages - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                          >
+                            <NavArrowDown width={12} height={12} className="-rotate-90 text-white" />
+                          </button>
+                        </div>
+                      )}
+                      {isStylesCollapsed ? <NavArrowUp width={14} height={14} className="text-gray-500" /> : <NavArrowDown width={14} height={14} className="text-gray-500" />}
+                    </div>
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {!isStylesCollapsed && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div
+                          ref={scrollContainerRef}
+                          className="flex overflow-x-hidden scroll-smooth snap-x snap-mandatory no-scrollbar"
+                        >
+                          {Array.from({ length: totalPages }).map((_, pageIdx) => (
+                            <div key={pageIdx} className="min-w-full grid grid-cols-3 gap-2 snap-start pb-2">
+                              {currentThemes.slice(pageIdx * 3, pageIdx * 3 + 3).map(t => (
+                                <button
+                                  key={t}
+                                  onClick={() => setTheme(t)}
+                                  className={`aspect-[3/4] border-2 rounded-lg overflow-hidden transition-all flex flex-col group ${theme === t ? 'border-violet-400 shadow-[0_0_15px_rgba(0,68,221,0.2)]' : 'border-[#333] hover:border-gray-500'}`}
+                                >
+                                  <div className={`flex-1 m-1.5 rounded-sm shadow-sm ${mode === 'RESUME'
+                                    ? (t === ResumeTheme.MODERN ? 'theme-preview-modern' : t === ResumeTheme.MINIMAL ? 'theme-preview-minimal' : 'theme-preview-creative')
+                                    : (t === LetterTheme.BOLD ? 'theme-preview-creative' : t === LetterTheme.MODERN ? 'theme-preview-modern' : 'theme-preview-minimal')
+                                    } bg-white opacity-90 group-hover:opacity-100 transition-opacity`}></div>
+                                  <div className={`text-[8px] pb-1.5 text-center font-bold tracking-tighter truncate px-1 uppercase ${theme === t ? 'text-violet-400' : 'text-gray-500 group-hover:text-gray-300'}`}>{t}</div>
+                                </button>
+                              ))}
+                            </div>
                           ))}
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </>
         )}
+
       </div>
     </motion.div>
   );

@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
-import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus, DoubleCheck } from 'iconoir-react';
+import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus, DoubleCheck, Settings, User as UserIcon } from 'iconoir-react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 import { parseResume } from '../services/geminiService';
 import { Tooltip } from './Tooltip';
+import AccountDropdown from './AccountDropdown';
 
 interface StageProps {
+  user: { name: string; email: string; seed: string };
+  onLogout: () => void;
   resume: ResumeData;
   coverLetter: string;
   mode: AppMode;
@@ -394,10 +397,11 @@ const ClosingBlock: React.FC<{
 );
 
 const Stage: React.FC<StageProps> = ({
-  resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
+  user, onLogout, resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
   onUploadResume, isAiLoading, setIsAiLoading, onApplySelected
 }) => {
   const [zoom, setZoom] = useState<number>(0.85);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const zoomValue = useMotionValue(zoom);
   useEffect(() => {
     zoomValue.set(zoom);
@@ -751,6 +755,16 @@ const Stage: React.FC<StageProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* Account Profile - Top Right */}
+      <div className="fixed top-8 right-12 z-50 print:hidden">
+        <AccountDropdown 
+          user={user}
+          onLogout={onLogout}
+          isOpen={isAccountOpen}
+          onToggle={() => setIsAccountOpen(!isAccountOpen)}
+          isCollapsed={false}
+        />
+      </div>
 
       {/* Drop Zone Indicator */}
       <AnimatePresence>
