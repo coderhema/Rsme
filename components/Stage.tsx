@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
-import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus, DoubleCheck, Settings, User as UserIcon } from 'iconoir-react';
+import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLine, Plus, DoubleCheck, Settings, User as UserIcon, Download, ShareAndroid, MediaImage } from 'iconoir-react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 import { parseResume } from '../services/geminiService';
 import { Tooltip } from './Tooltip';
@@ -226,9 +226,7 @@ const SignatureDialog: React.FC<{
           <div className="flex justify-between items-center mb-1">
             <h3 className="text-white font-bold text-sm tracking-tight">SIGNATURE</h3>
             <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X width={20} height={20} />
             </button>
           </div>
           <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Add your personal signature</p>
@@ -306,16 +304,12 @@ const SignatureDialog: React.FC<{
                     onClick={() => setUploadedImage(null)}
                     className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors"
                   >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X width={12} height={12} />
                   </button>
                 </div>
               ) : (
                 <label className="flex flex-col items-center justify-center min-h-[140px] rounded-xl border-2 border-dashed border-[#333] hover:border-violet-400/50 cursor-pointer transition-colors bg-white/[0.02]">
-                  <svg className="w-8 h-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <MediaImage width={32} height={32} className="text-gray-500 mb-2" />
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Upload signature image</span>
                   <span className="text-[9px] text-gray-600 mt-1">PNG, JPG or SVG</span>
                   <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
@@ -383,9 +377,7 @@ const ClosingBlock: React.FC<{
             {resume.name.split(' ')[0]}
           </span>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 rounded-lg">
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
+            <PenLine width={16} height={16} className="text-gray-400" />
           </div>
         </>
       )}
@@ -851,9 +843,7 @@ const Stage: React.FC<StageProps> = ({
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-white font-bold text-sm tracking-tight">SHARE DOCUMENT</h3>
                 <button onClick={() => setShowShareDialog(false)} className="text-gray-500 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X width={20} height={20} />
                 </button>
               </div>
               <div className="flex flex-col gap-3">
@@ -1382,9 +1372,7 @@ const Stage: React.FC<StageProps> = ({
           onClick={() => setIsEditing(!isEditing)}
           className={`flex items-center gap-2 px-6 py-3 text-[11px] font-bold rounded-full transition-all tracking-wide ${isEditing ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'bg-[#0044DD] text-white shadow-[0_0_20px_rgba(0,68,221,0.3)] hover:bg-[#0033aa]'}`}
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
+          <PenLine width={16} height={16} />
           {isEditing ? 'Finish' : 'Edit'}
         </button>
 
@@ -1392,9 +1380,7 @@ const Stage: React.FC<StageProps> = ({
           onClick={() => window.print()}
           className="flex items-center gap-2 px-6 py-3 text-[11px] font-bold rounded-full transition-all border tracking-wide bg-transparent text-white border-white/20 hover:bg-white/5"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
+          <Download width={16} height={16} />
           Download
         </button>
 
@@ -1402,9 +1388,7 @@ const Stage: React.FC<StageProps> = ({
           onClick={() => setShowShareDialog(!showShareDialog)}
           className={`flex items-center gap-2 px-6 py-3 text-[11px] font-bold rounded-full transition-all border tracking-wide ${showShareDialog ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/20 hover:bg-white/5'}`}
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-          </svg>
+          <ShareAndroid width={16} height={16} />
           Export
         </button>
       </div>
