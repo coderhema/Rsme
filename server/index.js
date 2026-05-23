@@ -2,9 +2,27 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { getCencoriClient } = require('./cencoriClient');
+
+// Load .env manually so CENCORI_API_KEY is available
+const envPath = path.resolve(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const [key, ...rest] = line.split('=');
+    if (key && !key.startsWith('#') && !key.startsWith('\n')) {
+      const k = key.trim();
+      const value = rest.join('=').trim().replace(/^["']|["']$/g, '');
+      if (k && !process.env[k]) {
+        process.env[k] = value;
+      }
+    }
+  });
+}
 
 const app = express();
 const port = 3001;
@@ -13,6 +31,8 @@ const port = 3001;
 app.use(cors({
   origin: 'http://localhost:3000'
 }));
+
+app.use(express.json());
 
 // Configure multer to store uploaded files in memory
 const upload = multer({ storage: multer.memoryStorage() });
