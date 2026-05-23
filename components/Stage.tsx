@@ -404,6 +404,7 @@ const Stage: React.FC<StageProps> = ({
   const [displayedValues, setDisplayedValues] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isOver, setIsOver] = useState(false);
+  const [uploadedDoc, setUploadedDoc] = useState<{ name: string; size: number; type: string } | null>(null);
   const [signature, setSignature] = useState<SignatureData | null>(null);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [sectionTitles, setSectionTitles] = useState({
@@ -450,6 +451,7 @@ const Stage: React.FC<StageProps> = ({
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
+    setUploadedDoc({ name: file.name, size: file.size, type: file.type });
     setIsUploading(true);
     setIsAiLoading(true);
     try {
@@ -485,6 +487,17 @@ const Stage: React.FC<StageProps> = ({
       setIsAiLoading(false);
       setIsUploading(false);
     }
+  };
+
+  const getDocExtension = (name: string) => {
+    const parts = name.split('.');
+    return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'DOC';
+  };
+
+  const formatFileSize = (size: number) => {
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${Math.round(size / 102.4) / 10} KB`;
+    return `${Math.round(size / (102.4 * 102.4)) / 10} MB`;
   };
 
   useEffect(() => {
@@ -542,6 +555,12 @@ const Stage: React.FC<StageProps> = ({
   useEffect(() => {
     smoothZoom.set(zoom);
   }, [zoom, smoothZoom]);
+
+  useEffect(() => {
+    if (!uploadedDoc || isUploading) return;
+    const timer = setTimeout(() => setUploadedDoc(null), 2200);
+    return () => clearTimeout(timer);
+  }, [uploadedDoc, isUploading]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !trackRef.current) return;
@@ -750,38 +769,72 @@ const Stage: React.FC<StageProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-none"
+            className="fixed inset-0 z-50 pointer-events-none backdrop-blur-md bg-black/55"
           >
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#1E1E1E] border-2 border-dashed border-[#444] w-[460px] h-[320px] rounded-[32px] flex flex-col items-center justify-center shadow-2xl"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#161616] border border-white/10 w-[480px] rounded-[24px] p-6 shadow-[0_25px_70px_rgba(0,0,0,0.55)] overflow-hidden"
             >
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="w-20 h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
-              >
-                <Plus width={36} height={36} strokeWidth={2.5} className="text-violet-400" />
-              </motion.div>
-              <div className="text-white font-black text-lg uppercase tracking-[0.2em] mb-2">
-                Drop Document Here
-              </div>
-              <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-8">
-                To extract and import data
-              </div>
-              <div className="flex gap-3">
-                {['PDF', 'DOCX', 'TXT'].map((ext) => (
-                  <div key={ext} className="px-4 py-2 rounded-xl bg-white/5 border border-[#333] text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-                    {ext}
+              <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.18),_transparent_55%)]" />
+              <div className="absolute -top-10 -right-12 w-36 h-36 rounded-full bg-violet-500/20 blur-3xl" />
+              <div className="flex items-center gap-4">
+                <div className="relative w-14 h-16 rounded-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 flex items-center justify-center overflow-hidden">
+                  <div className="absolute top-2 left-2 w-5 h-5 rounded-md bg-violet-400/80 shadow-[0_6px_14px_rgba(124,58,237,0.4)]" />
+                  <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-violet-500/20 blur-xl" />
+                  <div className="absolute bottom-2 left-2 text-[10px] font-black tracking-[0.2em] text-white/80">
+                    PDF
                   </div>
-                ))}
+                </div>
+                <div className="flex flex-col">
+                  <div className="text-[10px] text-gray-500 font-black tracking-[0.35em] uppercase">PDF</div>
+                  <div className="text-white text-xs font-bold tracking-tight max-w-[280px] truncate">
+                    Drop your document to import
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-semibold tracking-wide">
+                    PDF, DOCX, TXT • Importing into resume
+                  </div>
+                </div>
+                <div className="ml-auto px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-violet-400/20 text-violet-200">
+                  Ready
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest">
+                <div className="w-6 h-6 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.12)]">
+                  <Plus width={12} height={12} className="text-white" />
+                </div>
+                Drop file anywhere to import
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {uploadedDoc && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed left-1/2 -translate-x-1/2 top-8 z-40 print:hidden"
+        >
+          <div className="flex items-center gap-4 px-5 py-3 rounded-2xl bg-[#141414]/90 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur">
+            <div className="flex flex-col">
+              <div className="text-[10px] text-gray-500 font-black tracking-[0.35em] uppercase">
+                {getDocExtension(uploadedDoc.name)}
+              </div>
+              <div className="text-white text-xs font-bold tracking-tight max-w-[260px] truncate">
+                {uploadedDoc.name}
+              </div>
+              <div className="text-[10px] text-gray-400 font-semibold tracking-wide">
+                {formatFileSize(uploadedDoc.size)} • Importing into resume
+              </div>
+            </div>
+            <div className={`ml-auto px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isUploading ? 'bg-violet-400/20 text-violet-200' : 'bg-emerald-400/20 text-emerald-200'}`}>
+              {isUploading ? 'Processing' : 'Ready'}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
 
 

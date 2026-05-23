@@ -34,8 +34,8 @@ A desktop-class resume and cover letter builder with AI-powered ATS scoring and 
 1. Install dependencies:
    `npm install`
 
-2. Set your Groq API key in `.env`:
-   `GROQ_API_KEY=your_key_here`
+2. Set your Cencori API key in `.env`:
+   `CENCORI_API_KEY=your_key_here`
 
 3. Start the dev server:
    `npm run dev`

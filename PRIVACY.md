@@ -12,7 +12,7 @@ Rsme does not collect, store, or transmit any personal data to our servers. All 
 
 ## AI Processing
 
-When you use AI-powered features (suggestions, ATS scoring, cover letter generation, job link analysis, resume parsing), the content you provide (resume text, job descriptions, job URLs) is sent to Groq's API via the Groq SDK. This data is processed temporarily to generate responses and is not stored by us. Groq's handling of that data is governed by their own privacy policy.
+When you use AI-powered features (suggestions, ATS scoring, cover letter generation, job link analysis, resume parsing), the content you provide (resume text, job descriptions, job URLs) is sent to Cencori's API via the Cencori SDK. This data is processed temporarily to generate responses and is not stored by us. Cencori's handling of that data is governed by their own privacy policy.
 
 ## File Uploads
 
@@ -24,7 +24,7 @@ Rsme may use browser local storage to persist your session data. This data stays
 
 ## Third-Party Services
 
-- **Groq API** — Used for AI features. See [Groq's Privacy Policy](https://groq.com/privacy).
+- **Cencori API** — Used for AI features. See [Cencori's Privacy Policy](https://cencori.com/privacy-policy).
 - **Google Fonts** — The Inter and Playfair Display fonts are loaded from Google Fonts, which may log your IP address.
 
 ## Changes
