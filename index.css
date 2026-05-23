@@ -3,11 +3,27 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", serif;
-  --animate-shimmer: shimmer 3s linear infinite;
+
+  --color-violet-50: #f0f4ff;
+  --color-violet-100: #e0e9ff;
+  --color-violet-200: #c2d3ff;
+  --color-violet-300: #94b4ff;
+  --color-violet-400: #0044DD;
+  --color-violet-500: #0036b0;
+  --color-violet-600: #002883;
+  --color-violet-700: #001b5c;
+  --color-violet-800: #00123d;
+  --color-violet-900: #00081f;
+
+  --animate-shimmer: shimmer 3s ease-in-out infinite;
 
   @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
   }
 }
 
@@ -21,8 +37,81 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: white !important;
+  }
+
+  .print-reset-transform {
+    transform: none !important;
+    scale: 1 !important;
+    rotate: none !important;
+    translate: none !important;
+    display: block !important;
+    gap: 0 !important;
+    width: 210mm !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* One A4 page per wrapper — clips its child and forces a page break after */
+  .print-page-wrapper {
+    width: 210mm !important;
+    height: 297mm !important;
+    overflow: hidden !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid;
+    page-break-before: auto;
+    break-before: auto;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-page-wrapper:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /*
+   * Scale the 595×842 px canvas up to fill A4 (210mm × 297mm).
+   * At 96 dpi: 210mm = 793.7px → scale = 793.7/595 ≈ 1.334
+   * At 72 dpi: 210mm = 595.3px → scale ≈ 1.0
+   * Use 1.334 — browsers print at 96 dpi equivalent.
+   */
+  .resume-paper-page {
+    width: 595px !important;
+    min-width: 595px !important;
+    height: 842px !important;
+    max-height: 842px !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: scale(1.334) !important;
+    transform-origin: top left !important;
   }
 }

@@ -12,6 +12,8 @@ export interface ResumeData {
   experience: ExperienceItem[];
   skills: string[];
   education: EducationItem[];
+  certificates: string[];
+  customSections?: CustomSection[];
 }
 
 export interface ExperienceItem {
@@ -20,6 +22,17 @@ export interface ExperienceItem {
   company: string;
   period: string;
   description: string;
+}
+
+export interface CustomSectionItem {
+  id: string;
+  text: string;
+}
+
+export interface CustomSection {
+  id: string;
+  name: string;
+  items: CustomSectionItem[];
 }
 
 export interface EducationItem {

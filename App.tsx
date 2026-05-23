@@ -1,45 +1,53 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from './types';
-import { calculateATSScore, getAISuggestions, generateCoverLetter, roastResume, analyzeJobLink, parseResume } from './services/geminiService';
+import { calculateATSScore, getAISuggestions, generateCoverLetter, analyzeJobLink, parseResume } from './services/geminiService';
 import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
+import AccountDropdown from './components/AccountDropdown';
 
 const INITIAL_RESUME: ResumeData = {
-  name: "Alex Morgan",
-  role: "Senior Product Designer",
-  email: "alex.morgan@design.io",
-  phone: "+1 415 555 0192",
-  location: "San Francisco, CA",
-  summary: "Results-driven Product Designer with 6+ years of experience in fintech and SaaS. Expertise in design systems, high-fidelity prototyping, and user-centered methodologies.",
+  name: "Fullname Here",
+  role: "Your Job Title",
+  email: "name@email.com",
+  phone: "+1 234 555 0192",
+  location: "City, State",
+  summary: "A brief summary of your professional background, key skills, and career goals. Focus on your expertise and what you bring to the table.",
   experience: [
     {
       id: '1',
-      title: "Senior Designer",
-      company: "Creative Studio",
-      period: "2020 - Present",
-      description: "Led design system overhaul improving consistency across 4 product lines. Mentored junior designers and managed stakeholder relationships."
+      title: "Role Title",
+      company: "Company Name",
+      period: "Year - Present",
+      description: "Description of your responsibilities and achievements in this role. Highlight the impact you made and the skills you utilized."
     },
     {
       id: '2',
-      title: "UX Designer",
-      company: "TechStart Inc",
-      period: "2018 - 2020",
-      description: "Designed mobile-first experiences for fintech application serving 1M+ users. Focused on onboarding conversion."
+      title: "Previous Role Title",
+      company: "Previous Company",
+      period: "Year - Year",
+      description: "Description of your responsibilities and achievements in your previous role."
     }
   ],
-  skills: ["UI/UX Design", "Design Systems", "Figma", "React", "Prototyping", "User Research"],
+  skills: ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5"],
   education: [
     {
       id: 'ed1',
-      degree: "B.A. Graphic Design",
-      school: "Design Institute of Arts",
-      year: "2018"
+      degree: "Degree Name",
+      school: "University Name",
+      year: "Graduation Year"
     }
-  ]
+  ],
+  certificates: ["Certificate Name", "Another Certification"],
+  customSections: [],
 };
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<{ name: string; email: string; seed: string }>({
+    name: "Tolulope Olugbemi",
+    email: "tolulope@typecraft.io",
+    seed: "typecraft-user-1"
+  });
   const [resume, setResume] = useState<ResumeData>(INITIAL_RESUME);
   const [coverLetter, setCoverLetter] = useState<string>("Click 'Generate' to create a custom cover letter based on your resume.");
   const [coverLetterContext, setCoverLetterContext] = useState<string>("");
@@ -53,10 +61,11 @@ const App: React.FC = () => {
   const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
-  const [roast, setRoast] = useState<string | null>(null);
+
   const [jobLinks, setJobLinks] = useState<string[]>([]);
   const [jobContext, setJobContext] = useState<string>("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   const updateATSScore = useCallback(async () => {
     setIsAtsLoading(true);
@@ -140,6 +149,10 @@ const App: React.FC = () => {
     setIsAiLoading(false);
   };
 
+  const handleRemoveJobLink = (index: number) => {
+    setJobLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleGenerateCoverLetter = async () => {
     setIsAiLoading(true);
     const content = await generateCoverLetter(resume, coverLetterContext);
@@ -149,12 +162,7 @@ const App: React.FC = () => {
     setIsAiLoading(false);
   };
 
-  const handleRoast = async (data?: ResumeData | string) => {
-    setIsAiLoading(true);
-    const result = await roastResume(data || resume);
-    setRoast(result);
-    setIsAiLoading(false);
-  };
+
 
   const handleUploadResume = async (data: ResumeData) => {
     setResume(data);
@@ -162,7 +170,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans">
+    <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans print:h-auto print:overflow-visible print:bg-white print:block">
       <Sidebar 
         mode={mode}
         setMode={setMode}
@@ -186,10 +194,21 @@ const App: React.FC = () => {
         onAddJobLink={handleAddJobLink}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        onRemoveJobLink={handleRemoveJobLink}
       />
       
-      <Stage 
-        resume={resume}
+      <div className="relative flex-1 flex">
+        <div className="absolute top-8 right-8 z-50 print:hidden">
+          <AccountDropdown 
+            user={user}
+            onLogout={() => {}}
+            isOpen={isAccountOpen}
+            onToggle={() => setIsAccountOpen(!isAccountOpen)}
+            isCollapsed={false}
+          />
+        </div>
+        <Stage 
+          resume={resume}
         coverLetter={coverLetter}
         mode={mode}
         theme={mode === 'RESUME' ? resumeTheme : letterTheme}
@@ -200,13 +219,15 @@ const App: React.FC = () => {
         onUpdateExperience={handleUpdateExperience}
         onUpdateEducation={handleUpdateEducation}
         onUpdateCoverLetter={setCoverLetter}
-        onRoast={handleRoast}
         onUploadResume={handleUploadResume}
-        roast={roast}
-        onCloseRoast={() => setRoast(null)}
         isAiLoading={isAiLoading}
         setIsAiLoading={setIsAiLoading}
+        suggestions={suggestions}
+        selectedSuggestionIds={selectedSuggestionIds}
+        onDeselectSuggestion={(id) => setSelectedSuggestionIds(prev => prev.filter(i => i !== id))}
+        onApplySelected={handleApplySelected}
       />
+      </div>
     </div>
   );
 };

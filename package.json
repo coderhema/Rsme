@@ -1,18 +1,20 @@
 {
-  "name": "typecraft",
+  "name": "rsme",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"node server/index.js\"",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.41.0",
+    "@chenglou/pretext": "^0.0.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.2.0",
     "framer-motion": "^12.35.0",
+    "groq-sdk": "^0.37.0",
     "iconoir-react": "^7.11.0",
     "lucide-react": "^0.577.0",
     "mammoth": "^1.11.0",
@@ -21,8 +23,11 @@
     "tailwindcss": "^4.2.0"
   },
   "devDependencies": {
+    "@react-grab/mcp": "^0.1.25",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.1",
+    "react-grab": "^0.1.25",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
