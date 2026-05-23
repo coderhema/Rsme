@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </Tooltip>
 
       <div
-        className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-visible`}
+        className={`flex flex-col h-full ${isCollapsed ? 'items-center py-6 gap-8' : 'p-6 gap-6'} overflow-hidden`}
       >
         <AnimatePresence mode="wait">
           {isCollapsed ? (
@@ -420,7 +420,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
 
-              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div className="flex justify-between items-center mb-3">
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
                     {mode === 'RESUME' ? 'AI Checklist' : 'Generation Context'}
@@ -433,7 +433,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {mode === 'RESUME' ? (
-                  <div className="flex flex-col gap-6 overflow-y-auto pr-1 scrollbar-hide animate-in fade-in duration-300">
+                  <div className="flex flex-col gap-6 overflow-y-auto pr-2 scrollbar-hide animate-in fade-in duration-300 max-h-[32vh]">
                     {suggestions.length === 0 && !isAiLoading && (
                       <div className="p-4 bg-white/5 border border-dashed border-[#333] rounded-lg text-center">
                         <p className="text-[11px] text-gray-500 italic">
