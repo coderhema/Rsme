@@ -4,11 +4,8 @@ import { Sparks as Sparkles, Xmark as X, Check, ArrowRight, EditPencil as PenLin
 import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, ExperienceItem, EducationItem } from '../types';
 import { parseResume } from '../services/geminiService';
 import { Tooltip } from './Tooltip';
-import AccountDropdown from './AccountDropdown';
 
-interface StageProps {
-  user: { name: string; email: string; seed: string };
-  onLogout: () => void;
+interface StageProps{
   resume: ResumeData;
   coverLetter: string;
   mode: AppMode;
@@ -397,11 +394,10 @@ const ClosingBlock: React.FC<{
 );
 
 const Stage: React.FC<StageProps> = ({
-  user, onLogout, resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
+  resume, coverLetter, mode, theme, activeSuggestion, suggestions = [], selectedSuggestionIds = [], onDeselectSuggestion, onCloseSuggestion, onApplySuggestion, onUpdateResume, onUpdateExperience, onUpdateEducation, onUpdateCoverLetter,
   onUploadResume, isAiLoading, setIsAiLoading, onApplySelected
 }) => {
   const [zoom, setZoom] = useState<number>(0.85);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const zoomValue = useMotionValue(zoom);
   useEffect(() => {
     zoomValue.set(zoom);
@@ -755,17 +751,6 @@ const Stage: React.FC<StageProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Account Profile - Top Right */}
-      <div className="fixed top-8 right-12 z-50 print:hidden">
-        <AccountDropdown 
-          user={user}
-          onLogout={onLogout}
-          isOpen={isAccountOpen}
-          onToggle={() => setIsAccountOpen(!isAccountOpen)}
-          isCollapsed={false}
-        />
-      </div>
-
       {/* Drop Zone Indicator */}
       <AnimatePresence>
         {isOver && (

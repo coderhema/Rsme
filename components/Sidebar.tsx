@@ -17,17 +17,12 @@ import {
   ViewGrid,
   Settings,
   Xmark,
-  User,
-  LogOut,
   Key,
   CreditCard
 } from 'iconoir-react';
 import { Tooltip } from './Tooltip';
-import AccountDropdown from './AccountDropdown';
 
 interface SidebarProps {
-  user: { name: string; email: string; seed: string };
-  onLogout: () => void;
   mode: AppMode;
   setMode: (mode: AppMode) => void;
   atsScore: number;
@@ -52,13 +47,12 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  user, onLogout, mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse, onRemoveJobLink
+  mode, setMode, atsScore, isAtsLoading, suggestions, completedSuggestions, selectedSuggestionIds, onToggleSuggestionSelection, onApplySelected, isAiLoading, theme, setTheme, onSelectSuggestion, onGenerateCoverLetter, coverLetterContext, onUpdateLetterContext, jobLinks, onAddJobLink, isCollapsed, onToggleCollapse, onRemoveJobLink
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [newJobLink, setNewJobLink] = useState("");
   const [isStylesCollapsed, setIsStylesCollapsed] = useState(false);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   const resumeThemes = [
     ResumeTheme.MODERN, ResumeTheme.MINIMAL,
@@ -111,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-10 h-10 flex items-center justify-center shrink-0 relative group cursor-pointer">
               <img src="/logo.svg" alt="rsme logo" className="w-full h-10 object-contain absolute inset-0 transition-opacity duration-300 group-hover:opacity-0" />
               <div
-                className="w-full h-full absolute inset-0 bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="w-full h-full absolute inset-0 bg-gradient-to-r from-violet-400 via-white to-violet-400 bg-[length:200%_auto] animate-shimmer opacity-0 group-hover:opacity-100 group-hover:scale-150% group-hover:rotate-45% transition-opacity duration-300"
                 style={{
                   maskImage: "url('/logo.svg')",
                   maskSize: "contain",
@@ -145,16 +139,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {isCollapsed && (
           <div className="flex flex-col gap-6 items-center w-full">
-            <div className="mb-2">
-              <AccountDropdown 
-                user={user} 
-                onLogout={onLogout} 
-                isOpen={isAccountOpen} 
-                onToggle={() => setIsAccountOpen(!isAccountOpen)} 
-                isCollapsed={true}
-              />
-            </div>
-            <div className="w-8 h-[1px] bg-[#333]" />
             <Tooltip content={mode === 'RESUME' ? 'Cover Letter' : 'Resume Maker'} side="right">
               <button
                 onClick={() => setMode(mode === 'RESUME' ? 'COVER_LETTER' : 'RESUME')}
@@ -201,10 +185,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               </Tooltip>
               <Tooltip content="Settings / Config" side="right">
-                <button 
-                  onClick={() => setIsAccountOpen(!isAccountOpen)}
-                  className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors"
-                >
+                <button className="relative group p-3 text-gray-500 hover:text-violet-400 transition-colors">
                   <Settings width={20} height={20} />
                 </button>
               </Tooltip>
@@ -407,25 +388,13 @@ const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-      <div className={`mt-auto pt-4 border-t border-[#333] ${isCollapsed ? 'px-0 flex flex-col items-center' : ''}`}>
+      <div className={`mt-auto border-t border-[#333] ${isCollapsed ? 'px-0 flex flex-col items-center' : ''}`}>
         {!isCollapsed && (
-          <div className="mb-4">
-            <AccountDropdown 
-              user={user} 
-              onLogout={onLogout} 
-              isOpen={isAccountOpen} 
-              onToggle={() => setIsAccountOpen(!isAccountOpen)} 
-              isCollapsed={isCollapsed}
-            />
-          </div>
-        )}
-        
-        {!isCollapsed && (
-          <div className="pt-4 border-t border-[#333]">
+          <div className="pt-1">
 
                   <div
                     onClick={() => setIsStylesCollapsed(!isStylesCollapsed)}
-                    className="w-full flex justify-between items-center mb-3 group cursor-pointer"
+                    className="w-full flex justify-between items-center mt-2 mb-3 group cursor-pointer"
                   >
                     <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold group-hover:text-gray-300 transition-colors">
                       {mode === 'RESUME' ? 'Resume Styles' : 'Letter Styles'}
@@ -490,8 +459,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                       </motion.div>
                     )}
-                  </AnimatePresence>
-                </div>
+</AnimatePresence>
+
+              </div>
               )}
             </div>
           </>

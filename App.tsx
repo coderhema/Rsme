@@ -4,6 +4,7 @@ import { ResumeData, AISuggestion, AppMode, ResumeTheme, LetterTheme, Experience
 import { calculateATSScore, getAISuggestions, generateCoverLetter, analyzeJobLink, parseResume } from './services/geminiService';
 import Sidebar from './components/Sidebar';
 import Stage from './components/Stage';
+import AccountDropdown from './components/AccountDropdown';
 
 const INITIAL_RESUME: ResumeData = {
   name: "Fullname Here",
@@ -64,6 +65,7 @@ const App: React.FC = () => {
   const [jobLinks, setJobLinks] = useState<string[]>([]);
   const [jobContext, setJobContext] = useState<string>("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   const updateATSScore = useCallback(async () => {
     setIsAtsLoading(true);
@@ -170,8 +172,6 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#121212] overflow-hidden select-none font-sans print:h-auto print:overflow-visible print:bg-white print:block">
       <Sidebar 
-        user={user}
-        onLogout={() => {}}
         mode={mode}
         setMode={setMode}
         atsScore={atsScore}
@@ -197,10 +197,18 @@ const App: React.FC = () => {
         onRemoveJobLink={handleRemoveJobLink}
       />
       
-      <Stage 
-        user={user}
-        onLogout={() => {}}
-        resume={resume}
+      <div className="relative flex-1 flex">
+        <div className="absolute top-8 right-8 z-50 print:hidden">
+          <AccountDropdown 
+            user={user}
+            onLogout={() => {}}
+            isOpen={isAccountOpen}
+            onToggle={() => setIsAccountOpen(!isAccountOpen)}
+            isCollapsed={false}
+          />
+        </div>
+        <Stage 
+          resume={resume}
         coverLetter={coverLetter}
         mode={mode}
         theme={mode === 'RESUME' ? resumeTheme : letterTheme}
@@ -219,6 +227,7 @@ const App: React.FC = () => {
         onDeselectSuggestion={(id) => setSelectedSuggestionIds(prev => prev.filter(i => i !== id))}
         onApplySelected={handleApplySelected}
       />
+      </div>
     </div>
   );
 };
