@@ -45,8 +45,8 @@ const INITIAL_RESUME: ResumeData = {
 const App: React.FC = () => {
   const [user, setUser] = useState<{ name: string; email: string; seed: string }>({
     name: "Tolulope Olugbemi",
-    email: "tolulope@typecraft.io",
-    seed: "typecraft-user-1"
+    email: "tolulope@rsme.app",
+    seed: "rsme-user-1"
   });
   const [resume, setResume] = useState<ResumeData>(INITIAL_RESUME);
   const [coverLetter, setCoverLetter] = useState<string>("Click 'Generate' to create a custom cover letter based on your resume.");
