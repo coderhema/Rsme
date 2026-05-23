@@ -2,7 +2,7 @@
 <img width="1920" height="1080" alt="rsme (3)" src="https://github.com/user-attachments/assets/94ab1c87-6cd7-489c-b2fa-2f4295b7d8df" />
 </div>
 
-# Typecraft(RSME)
+# Rsme
 
 This contains everything you need to run your app locally.
 
